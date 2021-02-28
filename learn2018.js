@@ -353,20 +353,20 @@ function init() {
                         console.log(time)
                         var days = Math.ceil(time / 86400000);
                         if (time <= 0) {
-                            $(`#${wlkcid}`).find('li.clearfix').first().css('background', 'url(https://raw.githubusercontent.com/Exhen/learn2018helper/master/liangle.jpg)');
+                            $(`#${wlkcid}`).find('li.clearfix').first().css('background-color', 'gray');
                             $(`#${wlkcid}`).find('li.clearfix').first().append(`<span style="color: red;font-size: 16px;padding:  10px 18px;line-height: 18px;width: 18px;text-align: center;display: block;float: right;">已经截止</span>`)
-                        } else if (time <= 86400000) { //多于7天
-                            $(`#${wlkcid}`).find('li.clearfix').first().css('background', 'url(https://raw.githubusercontent.com/Exhen/learn2018helper/master/ddl.jpg)');
-                            $(`#${wlkcid}`).find('li.clearfix').first().append(`<span style="color: red;font-size: 16px;padding:  10px 18px;line-height: 18px;width: 18px;text-align: center;display: block;float: right;">最后一天</span>`)
+                        } else if (time <= 86400000) { //少于1天
+                            $(`#${wlkcid}`).find('li.clearfix').first().css('background-color', 'red');
+                            $(`#${wlkcid}`).find('li.clearfix').first().append(`<span style="color: black;font-size: 16px;padding:  10px 18px;line-height: 18px;width: 18px;text-align: center;display: block;float: right;">最后一天</span>`)
                         } else {
-                            $(`#${wlkcid}`).find('li.clearfix').first().css('background', 'url(https://raw.githubusercontent.com/Exhen/learn2018helper/master/ddl.jpg)');
+                            $(`#${wlkcid}`).find('li.clearfix').first().css('background-color', 'orange');
                             $(`#${wlkcid}`).find('li.clearfix').first().append(`<span style="color: red;font-size: 16px;padding: 10px 18px;line-height: 18px;width: 18px;text-align: center;display: block;float: right;">还剩<span style="text-align: center;">${days}</span>天</span>`)
                         }
                         $(`#${wlkcid}`).find('p.p_img').remove();
                     }
                 })
             } else {
-                $(this).find('li.clearfix').first().css('background', 'url(https://raw.githubusercontent.com/Exhen/learn2018helper/master/good.jpg)');
+                $(this).find('li.clearfix').first().css('background-color', 'lightgreen');
                 $(this).find('li.clearfix').first().append(`<span style="color: black;font-size: 16px;padding: 10px 18px;line-height: 18px;width: 18px;text-align: center;display: block;float: right;">没有作业</span>`)
                 $(this).find('p.p_img').remove();
             }
