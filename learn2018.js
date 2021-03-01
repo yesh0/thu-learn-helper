@@ -1,8 +1,8 @@
 // ==UserScript==
-// @icon         http://www.tsinghua.edu.cn/publish/newthu/images/favicon.ico
+// @icon         https://www.tsinghua.edu.cn/images/favicon.ico
 // @name         网络学堂2018助手
 // @namespace    exhen32@live.com
-// @version      2019年3月4日01版
+// @version      2019年3月4日02版
 // @description  微调排版，提醒更醒目; 支持导出日历，课程一目了然；课件批量下载，公告一键标记，拯救强迫症。
 // @require      http://cdn.bootcss.com/jquery/3.2.1/jquery.min.js
 // @require      https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.min.js
@@ -14,9 +14,9 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @connect      learn.tsinghua.edu.cn
-// @updateURL    https://greasyfork.org/scripts/378558-%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%822018%E5%8A%A9%E6%89%8B/code/%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%822018%E5%8A%A9%E6%89%8B.user.js
-// @run-at       document-idle
-// @updateURL    https://greasyfork.org/scripts/378558/code/user.js
+// @updateURL    https://greasyfork.org/scripts/422447-%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%822018%E5%8A%A9%E6%89%8B/code/%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%822018%E5%8A%A9%E6%89%8B.user.js
+// @run-at       document-start
+// @updateURL    https://greasyfork.org/scripts/422447/code/user.js
 // ==/UserScript==
 
 var blocker = $('<div class="blocker" id="manualAlert" style="position: fixed;width: 100%;height: 100%;background: #4646466b;z-index: 999;"></div>')
