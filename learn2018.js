@@ -1,8 +1,8 @@
 // ==UserScript==
 // @icon         https://www.tsinghua.edu.cn/images/favicon.ico
-// @name         网络学堂2018助手
+// @name         网络学堂1202助手
 // @namespace    exhen32@live.com
-// @version      2019年3月4日02版
+// @version      2021年10月14日00版
 // @description  微调排版，提醒更醒目; 支持导出日历，课程一目了然；课件批量下载，公告一键标记，拯救强迫症。
 // @require      http://cdn.bootcss.com/jquery/3.2.1/jquery.min.js
 // @require      https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.min.js
@@ -194,29 +194,73 @@ var saveAs = saveAs || (function (view) {
 // while `this` is nsIContentFrameMessageManager
 // with an attribute `content` that corresponds to the window
 
-if (typeof module !== "undefined" && module.exports) {
-    module.exports.saveAs = saveAs;
-} else if ((typeof define !== "undefined" && define !== null) && (define.amd !== null)) {
-    define("FileSaver.js", function () {
-        return saveAs;
-    });
-}
-
-var getJSON = function (url, meta, callback) {
-    GM_xmlhttpRequest({
-        method: 'GET',
-        url: url,
+var csrf = '';
+var dummy = {
+    "sEcho": 1,
+    "iColumns": 8,
+    "sColumns": ",,,,,,,",
+    "iDisplayStart": 0,
+    "iDisplayLength": "30",
+    "mDataProp_0": "wz",
+    "bSortable_0": false,
+    "mDataProp_1": "bt",
+    "bSortable_1": true,
+    "mDataProp_2": "mxdxmc",
+    "bSortable_2": true,
+    "mDataProp_3": "zywcfs",
+    "bSortable_3": true,
+    "mDataProp_4": "kssj",
+    "bSortable_4": true,
+    "mDataProp_5": "jzsj",
+    "bSortable_5": true,
+    "mDataProp_6": "jzsj",
+    "bSortable_6": true,
+    "mDataProp_7": "function",
+    "bSortable_7": false,
+    "iSortCol_0": 5,
+    "sSortDir_0": "desc",
+    "iSortCol_1": 6,
+    "sSortDir_1": "desc",
+    "iSortingCols": 2,
+    "wlkcid": "2021-2022-1142765385"
+};
+var shallowCopyObject = function(obj) {
+    return Object.fromEntries(Object.entries(obj));
+};
+var fetchJSON = function(url, method, meta, callback, data) {
+    /*GM_xmlhttpRequest({
+        method: method,
+        url: url.includes('?') ? (url + '&_csrf=' + csrf + ',' + csrf) : (url + '?_csrf=' + csrf + ',' + csrf),
         headers: {
             'Accept': 'application/json'
         },
+        data: { "aoData": JSON.stringify(Object.assign(shallowCopyObject(dummy), data)) },
         onload: function (response) {
+            console.log(response);
             if (response.status >= 200 && response.status < 400) {
                 callback(JSON.parse(response.responseText), meta, url);
             } else {
                 callback(false, meta, url);
             }
         }
-    });
+    });*/
+    fetch(url.includes('?') ? (url + '&_csrf=' + csrf) : (url + '?_csrf=' + csrf),
+          {
+        method: method,
+        headers: { 'Accept': 'application/json, text/javascript, */*; q=0.01',
+                  'Cache-Control': 'max-age=0',
+                  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'include',
+        referrer: 'https://learn.tsinghua.edu.cn/',
+        referrerPolicy: 'origin',
+        body: method.toUpperCase() === 'POST' ? new URLSearchParams({
+            "aoData": JSON.stringify(Object.entries(Object.assign(shallowCopyObject(dummy), data)).map(function(e) { return { 'name': e[0], 'value': e[1] } })) }) : undefined,
+    }).then(function(response) { if(response.ok) { return response.json() } else { callback(null, meta, url) } })
+        .then(function(json) { callback(json, meta, url) });
+};
+var getJSON = function (url, meta, callback) {
+    fetchJSON(url, 'GET', meta, callback);
 };
 
 
@@ -304,6 +348,7 @@ function PrefixInteger(num, length) {
 
 function init() {
     if (!document.getElementById("dUietC") && $('ul.stu').length) {
+        csrf = new URL($('.p_img>img')[0].src).searchParams.get('_csrf');
         var dUietC = document.createElement("a");
         dUietC.id = "dUietC";
         document.getElementsByTagName("html")[0].appendChild(dUietC);
@@ -338,7 +383,7 @@ function init() {
             var wlkcid = $(this).find('.hdtitle a').attr('href').slice(43);
             $(this).attr('id', wlkcid)
             if (parseInt($(this).find('span.green').text()) > 0) {
-                getJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kczy/zy/student/index/zyListWj?wlkcid=${wlkcid}&size=999`, null, function (doc, meta, url) {
+                fetchJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kczy/zy/student/zyListWj`, 'POST', null, function (doc, meta, url) {
                     if (doc) {
                         var ddl = 0;
                         var now = new Date();
@@ -348,7 +393,7 @@ function init() {
                             }
                         }
                         console.log(ddl)
-                        var now = new Date();
+                        now = new Date();
                         var time = ddl - now.getTime();
                         console.log(time)
                         var days = Math.ceil(time / 86400000);
@@ -364,7 +409,7 @@ function init() {
                         }
                         $(`#${wlkcid}`).find('p.p_img').remove();
                     }
-                })
+                }, { "wlkcid": wlkcid});
             } else {
                 $(this).find('li.clearfix').first().css('background-color', 'lightgreen');
                 $(this).find('li.clearfix').first().append(`<span style="color: black;font-size: 16px;padding: 10px 18px;line-height: 18px;width: 18px;text-align: center;display: block;float: right;">没有作业</span>`)
@@ -507,91 +552,69 @@ function init() {
 
             // 一键已读
             var notificationBtn = $('<p class="calendar_btn myToobar"><a href="javascript:void(0)">新公告一键标记已读</a></p>');
+
             notificationBtn.click(function () {
-                blockerTemp = blocker;
-                blockerTemp.addClass('notificationBtn');
-                $('body').prepend(blockerTemp);
-                $('.blocker.ddlBtn').empty();
-                $('.notificationBtn.blocker').append('<span style="background: #fffffff5;border-radius: 3px;left: 30%;right: 30%;position: fixed;text-align: center;padding: 3%;line-height: 40px;font-size: 30px;">一键已读功能不稳定，容易引起BUG，调试ing！</br>扫码催更<img style="width:400px" src="https://exhen.github.io//assets/img/qrcode.png"></span>').click(function () {
-                    $(this).fadeOut().remove()
-                })
-                $('#manualAlert').fadeIn();
-                setTimeout(function () {
-                    $('.blocker.notificationBtn').fadeOut();
-                    $('.blocker.notificationBtn').remove();
-                }, 10000)
-                delete blockerTemp;
+                var unreadNum = parseInt($(this).parent().parent().parent().find('span.orange.stud').text());
+                if (unreadNum > 0) {
+                    blockerTemp = blocker;
+                    blockerTemp.attr('class', 'blocker notificationBtn')
+                    $('body').prepend(blockerTemp);
+                    $('.blocker.ddlBtn').empty();
+                    $('.blocker.notificationBtn').append('<span class="fixedCenter" style="font-size:30px;color:white">Loading...</span>')
+                    getJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kcgg/wlkc_ggb/student/kcggListXs?size=999&wlkcid=${wlkcid}`, null, function (doc, meta, url) {
+                        $('.blocker.notificationBtn').remove();
+                        if (doc) {
+                            var unreadItems = doc.object.aaData.filter(function(e) { return e.sfyd === '是' });
+                            if(unreadItems.length === 0) {
+                                // TODO: alert
+                            } else if(confirm(`按确认键将以下公告设为已读：\n${unreadItems.map(function(e) { return '- ' + e.bt }).join('\n')}`)) {
+                                let total = unreadItems.length;
+                                let count = 0;
+                                let successNum = 0;
+                                for(var e of unreadItems) {
+                                    getJSON(`http://learn.tsinghua.edu.cn/f/wlxt/kcgg/wlkc_ggb/student/beforeViewXs?wlkcid=${wlkcid}&id=${e.ggid}`, null,
+                                        function (json) {
+                                            count++;
+                                            if(json !== null) { ++successNum; }
+                                            if (total === count) {
+                                                if (successNum === count) {
+                                                    alert('一键已读成功！');
+                                                    location.reload();
+                                                } else {
+                                                    alert(`${unreadNum-successNum}/${unreadNum}条公告标记已读失败！`);
+                                                    location.reload();
+                                                }
+                                            }
+                                        });
+                                }
+                            }
+                            if (unreadItems.length !== unreadNum) {
+                                alert('学堂系统BUG，未读数量显示不对，建议反馈给ITS！')
+                            }
+                        } else {
+                            alert('获取列表失败！请检查网络。')
+                        }
+                    })
+                    delete blockerTemp
+                } else {
+                    alert('没有未读公告。')
+                }
             })
-
-            // notificationBtn.click(function () {
-            //     var unreadNum = parseInt($(this).parent().parent().parent().find('span.orange.stud').text());
-            //     if (unreadNum > 0) {
-            //         blockerTemp = blocker;
-            //         blockerTemp.attr('class', 'blocker notificationBtn')
-            //         $('body').prepend(blockerTemp);$('.blocker.ddlBtn').empty();
-            //         $('.blocker.notificationBtn').append('<span class="fixedCenter" style="font-size:30px;color:white">Loading...</span>')
-            //         getJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kcgg/wlkc_ggb/student/kcggListXs?size=999&wlkcid=${wlkcid}`, null, function (doc, meta, url) {
-            //             $('.blocker.notificationBtn').remove();
-            //             if (doc) {
-            //                 console.log(doc)
-            //                 var sucessNum = 0,
-            //                     arrivedNum = 0,
-            //                     sentNum = 0;
-            //                 for (var i = 0; i < doc.object.iTotalRecords; i++) {
-            //                     if (doc.object.aaData[i].sfyd == '否') {
-            //                         sentNum++;
-            //                         GM_xmlhttpRequest({
-            //                             method: 'GET',
-            //                             url: `http://learn.tsinghua.edu.cn/f/wlxt/kcgg/wlkc_ggb/student/beforeViewXs?wlkcid=${wlkcid}&id=${doc.object.aaData[i].ggid}`,
-            //                             headers: {
-            //                                 'Accept': 'application/json'
-            //                             },
-            //                             onload: function (response) {
-            //                                 arrivedNum++;
-            //                                 if (response.status >= 200 && response.status < 400) {
-            //                                     console.log('gg has been read');
-            //                                     sucessNum++
-            //                                 } else {
-            //                                     console.log(doc.object.aaData[i].ggid + ' error!')
-            //                                 }
-            //                                 if (arrivedNum == unreadNum) {
-            //                                     if (sucessNum == unreadNum) {
-            //                                         alert('一键已读成功！');
-            //                                         location.reload();
-            //                                     } else {
-            //                                         alert(`${unreadNum-sucessNum}/${unreadNum}条公告标记已读失败！`);
-            //                                         location.reload();
-            //                                     }
-            //                                 }
-            //                             }
-            //                         });
-            //                     }
-            //                 }
-            //                 if (sentNum !== unreadNum) {
-            //                     alert('学堂系统BUG，未读数量显示不对，建议反馈给ITS！')
-            //                 }
-            //             } else {
-            //                 alert('获取列表失败！请检查网络。')
-            //             }
-
-            //         })
-            //     } else {
-            //         alert('没有未读公告。')
-            //     }
-            // })
 
             $(this).find('div.state.stu').append(notificationBtn);
 
             // 批量下载
 
-            function downloadFromJson(doc, flagForOld, downloadList) {
+            function downloadFromJson(doc, flagForOld, downloadList, names) {
                 var totalSize = 0;
+                console.log(doc);
                 for (var i = 0; i < doc.object.length; i++) {
-                    totalSize = totalSize + doc.object[i].wjdx;
                     if (!flagForOld && !doc.object[i].isNew) {
                         continue;
                     }
                     downloadList.push(doc.object[i].wjid);
+                    names.push(doc.object[i].bt);
+                    totalSize = totalSize + doc.object[i].wjdx;
                 }
                 return totalSize
             }
@@ -619,11 +642,14 @@ function init() {
                     $('.blocker.attachmentAllBtn').remove();
                     if (doc) {
                         // console.log(doc)
-                        var downloadList = new Array();
-                        var totalSize = downloadFromJson(doc, true, downloadList);
+                        var downloadList = [];
+                        var names = [];
+                        var totalSize = downloadFromJson(doc, true, downloadList, names);
                         // console.log(downloadList, totalSize)
                         if (downloadList.length) {
-                            if (confirm(`按确认键开始下载全部${downloadList.length}个文件（共计${getFileSize(totalSize)}）。\n如果下载未开始，请检查浏览器是否拦截了本网页的弹出窗口（例如Chrome地址栏最右侧出现带小红叉的图标）`)) {
+                            if (confirm(`按确认键开始下载全部${downloadList.length}个文件（共计${getFileSize(totalSize)}）：\n`
+                                        + `${'《' + names.join('》\n《') + '》'}。\n`
+                                        + `如果下载未开始，请检查浏览器是否拦截了本网页的弹出窗口（例如Chrome地址栏最右侧出现带小红叉的图标）`)) {
                                 for (var i = 0; i < downloadList.length; i++) {
                                     window.open('http://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/downloadFile?sfgk=0&wjid=' + downloadList[i])
                                 }
@@ -650,11 +676,14 @@ function init() {
                     $('.blocker.attachmentNewBtn').remove();
                     if (doc) {
                         console.log(doc)
-                        var downloadList = new Array();
-                        var totalSize = downloadFromJson(doc, false, downloadList);
+                        var downloadList = [];
+                        var names = [];
+                        var totalSize = downloadFromJson(doc, false, downloadList, names);
                         console.log(downloadList, totalSize)
                         if (downloadList.length) {
-                            if (confirm(`按确认键开始下载全部${downloadList.length}个文件（共计${getFileSize(totalSize)}）。\n如果下载未开始，请检查浏览器是否拦截了本网页的弹出窗口（例如Chrome地址栏最右侧出现带小红叉的图标）`)) {
+                            if (confirm(`按确认键开始下载全部${downloadList.length}个文件（共计${getFileSize(totalSize)}）：\n`
+                                        + `${'《' + names.join('》\n《') + '》'}。\n`
+                                        + `如果下载未开始，请检查浏览器是否拦截了本网页的弹出窗口（例如Chrome地址栏最右侧出现带小红叉的图标）`)) {
                                 for (var i = 0; i < downloadList.length; i++) {
                                     window.open('http://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/downloadFile?sfgk=0&wjid=' + downloadList[i])
                                 }
