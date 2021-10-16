@@ -10,7 +10,7 @@
 可以到科技服务队的微信推送里查看功能： [https://mp.weixin.qq.com/s/DflkCO-pMiiFrsMQEFyLTA](https://mp.weixin.qq.com/s/DflkCO-pMiiFrsMQEFyLTA)
 
 截图：
-![image.png](./image.png)
+![image.png](./screenshots/1.png)
 
 ## 更新日志
 
