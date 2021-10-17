@@ -2,17 +2,13 @@
 // @icon         https://www.tsinghua.edu.cn/images/favicon.ico
 // @name         网络学堂1202助手
 // @namespace    exhen32@live.com
-// @version      2021年10月16日00版
+// @version      2021年10月17日00版
 // @description  微调排版，提醒更醒目; 支持导出日历，课程一目了然；课件批量下载，公告一键标记，拯救强迫症。
 // @require      http://cdn.bootcss.com/jquery/3.2.1/jquery.min.js
 // @require      https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.min.js
+// @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
 // @author       Exhen
 // @match        http*://learn.tsinghua.edu.cn/f/wlxt/index/course/student/
-// @grant        GM_xmlhttpRequest
-// @grant        GM_setClipboard
-// @grant        GM_addStyle
-// @grant        GM_setValue
-// @grant        GM_getValue
 // @connect      learn.tsinghua.edu.cn
 // @updateURL    https://greasyfork.org/scripts/422447-%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%822018%E5%8A%A9%E6%89%8B/code/%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%822018%E5%8A%A9%E6%89%8B.user.js
 // @run-at       document-start
@@ -24,175 +20,6 @@ var blocker = $('<div class="blocker" id="manualAlert" style="position: fixed;wi
 $('head').append('<style type="text/css">.fixedCenter {left: 50%;position: absolute;right: 50%;top: 50%;bottom: 50%;}')
 
 $('head').append('<style type="text/css">.myToobar {margin: 5px;display: inline-block;background: white;border: 1px solid gray;padding: 5px;border-radius: 5px; color:black} .myToobar a {color: black}')
-
-var saveAs = saveAs || (function (view) {
-    "use strict";
-    // IE <10 is explicitly unsupported
-    if (typeof view === "undefined" || typeof navigator !== "undefined" && /MSIE [1-9]\./.test(navigator.userAgent)) {
-        return;
-    }
-    var
-        doc = view.document
-        // only get URL when necessary in case Blob.js hasn't overridden it yet
-        ,
-        get_URL = function () {
-            return view.URL || view.webkitURL || view;
-        },
-        save_link = doc.createElementNS("http://www.w3.org/1999/xhtml", "a"),
-        can_use_save_link = "download" in save_link,
-        click = function (node) {
-            var event = new MouseEvent("click");
-            node.dispatchEvent(event);
-        },
-        is_safari = /constructor/i.test(view.HTMLElement) || view.safari,
-        is_chrome_ios = /CriOS\/[\d]+/.test(navigator.userAgent),
-        throw_outside = function (ex) {
-            (view.setImmediate || view.setTimeout)(function () {
-                throw ex;
-            }, 0);
-        },
-        force_saveable_type = "application/octet-stream"
-        // the Blob API is fundamentally broken as there is no "downloadfinished" event to subscribe to
-        ,
-        arbitrary_revoke_timeout = 1000 * 40 // in ms
-        ,
-        revoke = function (file) {
-            var revoker = function () {
-                if (typeof file === "string") { // file is an object URL
-                    get_URL().revokeObjectURL(file);
-                } else { // file is a File
-                    file.remove();
-                }
-            };
-            setTimeout(revoker, arbitrary_revoke_timeout);
-        },
-        dispatch = function (filesaver, event_types, event) {
-            event_types = [].concat(event_types);
-            var i = event_types.length;
-            while (i--) {
-                var listener = filesaver["on" + event_types[i]];
-                if (typeof listener === "function") {
-                    try {
-                        listener.call(filesaver, event || filesaver);
-                    } catch (ex) {
-                        throw_outside(ex);
-                    }
-                }
-            }
-        },
-        auto_bom = function (blob) {
-            // prepend BOM for UTF-8 XML and text/* types (including HTML)
-            // note: your browser will automatically convert UTF-16 U+FEFF to EF BB BF
-            if (/^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(blob.type)) {
-                return new Blob([String.fromCharCode(0xFEFF), blob], {
-                    type: blob.type
-                });
-            }
-            return blob;
-        },
-        FileSaver = function (blob, name, no_auto_bom) {
-            if (!no_auto_bom) {
-                blob = auto_bom(blob);
-            }
-            // First try a.download, then web filesystem, then object URLs
-            var
-                filesaver = this,
-                type = blob.type,
-                force = type === force_saveable_type,
-                object_url, dispatch_all = function () {
-                    dispatch(filesaver, "writestart progress write writeend".split(" "));
-                }
-                // on any filesys errors revert to saving with object URLs
-                ,
-                fs_error = function () {
-                    if ((is_chrome_ios || (force && is_safari)) && view.FileReader) {
-                        // Safari doesn't allow downloading of blob urls
-                        var reader = new FileReader();
-                        reader.onloadend = function () {
-                            var url = is_chrome_ios ? reader.result : reader.result.replace(/^data:[^;]*;/, 'data:attachment/file;');
-                            var popup = view.open(url, '_blank');
-                            if (!popup) view.location.href = url;
-                            url = undefined; // release reference before dispatching
-                            filesaver.readyState = filesaver.DONE;
-                            dispatch_all();
-                        };
-                        reader.readAsDataURL(blob);
-                        filesaver.readyState = filesaver.INIT;
-                        return;
-                    }
-                    // don't create more object URLs than needed
-                    if (!object_url) {
-                        object_url = get_URL().createObjectURL(blob);
-                    }
-                    if (force) {
-                        view.location.href = object_url;
-                    } else {
-                        var opened = view.open(object_url, "_blank");
-                        if (!opened) {
-                            // Apple does not allow window.open, see https://developer.apple.com/library/safari/documentation/Tools/Conceptual/SafariExtensionGuide/WorkingwithWindowsandTabs/WorkingwithWindowsandTabs.html
-                            view.location.href = object_url;
-                        }
-                    }
-                    filesaver.readyState = filesaver.DONE;
-                    dispatch_all();
-                    revoke(object_url);
-                };
-            filesaver.readyState = filesaver.INIT;
-
-            if (can_use_save_link) {
-                object_url = get_URL().createObjectURL(blob);
-                setTimeout(function () {
-                    save_link.href = object_url;
-                    save_link.download = name;
-                    click(save_link);
-                    dispatch_all();
-                    revoke(object_url);
-                    filesaver.readyState = filesaver.DONE;
-                });
-                return;
-            }
-
-            fs_error();
-        },
-        FS_proto = FileSaver.prototype,
-        saveAs = function (blob, name, no_auto_bom) {
-            return new FileSaver(blob, name || blob.name || "download", no_auto_bom);
-        };
-    // IE 10+ (native saveAs)
-    if (typeof navigator !== "undefined" && navigator.msSaveOrOpenBlob) {
-        return function (blob, name, no_auto_bom) {
-            name = name || blob.name || "download";
-
-            if (!no_auto_bom) {
-                blob = auto_bom(blob);
-            }
-            return navigator.msSaveOrOpenBlob(blob, name);
-        };
-    }
-
-    FS_proto.abort = function () {};
-    FS_proto.readyState = FS_proto.INIT = 0;
-    FS_proto.WRITING = 1;
-    FS_proto.DONE = 2;
-
-    FS_proto.error =
-        FS_proto.onwritestart =
-        FS_proto.onprogress =
-        FS_proto.onwrite =
-        FS_proto.onabort =
-        FS_proto.onerror =
-        FS_proto.onwriteend =
-        null;
-
-    return saveAs;
-}(
-    typeof self !== "undefined" && self ||
-    typeof window !== "undefined" && window ||
-    this.content
-));
-// `self` is undefined in Firefox for Android content script context
-// while `this` is nsIContentFrameMessageManager
-// with an attribute `content` that corresponds to the window
 
 var csrf = '';
 var dummy = {
@@ -255,85 +82,6 @@ var getJSON = function (url, meta, callback) {
     fetchJSON(url, 'GET', meta, callback);
 };
 
-
-function waitForKeyElements(
-    selectorTxt,
-    /* Required: The jQuery selector string that
-                        specifies the desired element(s).
-                    */
-    actionFunction,
-    /* Required: The code to run when elements are
-                           found. It is passed a jNode to the matched
-                           element.
-                       */
-    bWaitOnce,
-    /* Optional: If false, will continue to scan for
-                      new elements even after the first match is
-                      found.
-                  */
-    iframeSelector
-    /* Optional: If set, identifies the iframe to
-                          search.
-                      */
-) {
-    var targetNodes, btargetsFound;
-
-    if (typeof iframeSelector == "undefined")
-        targetNodes = jQuery(selectorTxt);
-    else
-        targetNodes = jQuery(iframeSelector).contents()
-        .find(selectorTxt);
-
-    if (targetNodes && targetNodes.length > 0) {
-        btargetsFound = true;
-        /*--- Found target node(s).  Go through each and act if they
-            are new.
-        */
-        targetNodes.each(function () {
-            var jThis = jQuery(this);
-            var alreadyFound = jThis.data('alreadyFound') || false;
-
-            if (!alreadyFound) {
-                //--- Call the payload function.
-                var cancelFound = actionFunction(jThis);
-                if (cancelFound)
-                    btargetsFound = false;
-                else
-                    jThis.data('alreadyFound', true);
-            }
-        });
-    } else {
-        btargetsFound = false;
-    }
-
-    //--- Get the timer-control variable for this selector.
-    var controlObj = waitForKeyElements.controlObj || {};
-    var controlKey = selectorTxt.replace(/[^\w]/g, "_");
-    var timeControl = controlObj[controlKey];
-
-    //--- Now set or clear the timer as appropriate.
-    if (btargetsFound && bWaitOnce && timeControl) {
-        //--- The only condition where we need to clear the timer.
-        clearInterval(timeControl);
-        delete controlObj[controlKey]
-    } else {
-        //--- Set a timer, if needed.
-        if (!timeControl) {
-            timeControl = setInterval(function () {
-                    waitForKeyElements(selectorTxt,
-                        actionFunction,
-                        bWaitOnce,
-                        iframeSelector
-                    );
-                },
-                300
-            );
-            controlObj[controlKey] = timeControl;
-        }
-    }
-    waitForKeyElements.controlObj = controlObj;
-}
-
 function PrefixInteger(num, length) {
     return (Array(length).join(0) + num).slice(-length);
 }
@@ -366,8 +114,6 @@ function init() {
         $('ul.stu').each(function () {
             $(this).find('li').first().css('padding', '0px');
         })
-
-
 
         $('dd.stu').each(function () {
             // 图片提醒
@@ -492,8 +238,6 @@ function init() {
             })
             $(this).find('div.state.stu').append(calendarBtn);
 
-
-
             // 作业日历
             var ddlBtn = $('<p class="calendar_btn myToobar"><a href="javascript:void(0)">导出作业DDL到日历文件</a></p>');
             ddlBtn.click(function () {
@@ -597,7 +341,6 @@ function init() {
             $(this).find('div.state.stu').append(notificationBtn);
 
             // 批量下载
-
             function downloadFromJson(doc, flagForOld, downloadList, names) {
                 var totalSize = 0;
                 console.log(doc);
@@ -709,22 +452,16 @@ window.addEventListener('load', function () {
     });
     $('div.header div.w div.right').append(icon)
 
-    waitForKeyElements('dd.stu', init, true)
-
-    // if (!init()) {
-    //     console.log('appending suggestion')
-    //     $('body').prepend('<div onClick="$(this).hide()" id="manualAlert" style="display: none;position: absolute;width: 100%;height: 100%;background: #4646466b;z-index: 999;"><span style="background: #fffffff5;border-radius: 3px;left: 30%;right: 30%;top: 25%;bottom: 25%;position: fixed;text-align: center;padding: 3%;line-height: 40px;font-size: 30px;">当前网速缓慢，脚本可能加载不畅，可以尝试右上角“手动加载”。</span></div>')
-    //     $('#manualAlert').fadeIn();
-    //     setTimeout(function () {
-    //         $('#manualAlert').fadeOut();
-    //     }, 2000)
-    // };
-
-
-    // $('body').prepend('<div onClick="$(this).hide()" id="manualAlert" style="display: none;position: absolute;width: 100%;height: 100%;background: #4646466b;z-index: 999;"><span style="background: #fffffff5;border-radius: 3px;left: 30%;right: 30%;position: fixed;text-align: center;padding: 3%;line-height: 40px;font-size: 30px;">作者偷懒，代码还没敲完！扫码催活<img src="https://exhen.github.io//assets/img/qrcode.png"></span></div>')
-    //         $('#manualAlert').fadeIn();
-    //         setTimeout(function () {
-    //             $('#manualAlert').fadeOut();
-    //         }, 10000)
-
+    if(document.querySelector('dd.stu') === null) {
+        var container = document.getElementById('suoxuecourse');
+        var observer = new MutationObserver(function() {
+            if(document.querySelector('dd.stu') !== null) {
+                observer.disconnect();
+                setInterval(init, 100);
+            }
+        });
+        observer.observe(container, { attributes: false, childList: true, subtree: false });
+    } else {
+      init();
+    }
 })
