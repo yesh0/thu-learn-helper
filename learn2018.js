@@ -86,8 +86,8 @@ function PrefixInteger(num, length) {
     return (Array(length).join(0) + num).slice(-length);
 }
 
-function init() {
-    if (!document.getElementById("dUietC") && $('ul.stu').length) {
+function init(force) {
+    if (force || (!document.getElementById("dUietC") && $('ul.stu').length)) {
         csrf = new URL($('.p_img>img')[0].src).searchParams.get('_csrf');
         var dUietC = document.createElement("a");
         dUietC.id = "dUietC";
@@ -448,7 +448,7 @@ function init() {
 window.addEventListener('load', function () {
     var icon = $('<div id="manualScript"><a ref="javascript:void(0);"><i class="webicon-recycle"></i>手动加载</a></div>');
     icon.find('a').click(function () {
-        init();
+        init(true);
     });
     $('div.header div.w div.right').append(icon)
 
@@ -456,8 +456,7 @@ window.addEventListener('load', function () {
         var container = document.getElementById('suoxuecourse');
         var observer = new MutationObserver(function() {
             if(document.querySelector('dd.stu') !== null) {
-                observer.disconnect();
-                setInterval(init, 100);
+                setTimeout(function() { init(true); }, 100);
             }
         });
         observer.observe(container, { attributes: false, childList: true, subtree: false });
