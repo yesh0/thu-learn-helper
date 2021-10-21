@@ -194,7 +194,7 @@ function getJSON(url) {
 function displayDDL(e, wlkcid) {
     var parent = e.parentElement.parentElement.parentElement
     if (parseInt(e.innerText) > 0) {
-        fetchJSON('http://learn.tsinghua.edu.cn/b/wlxt/kczy/zy/student/zyListWj', 'POST').then(
+        fetchJSON('http://learn.tsinghua.edu.cn/b/wlxt/kczy/zy/student/zyListWj', 'POST', { 'wlkcid': wlkcid }).then(
             function (json) {
                 if(json) {
                     var now = Date.now()
@@ -213,8 +213,6 @@ function displayDDL(e, wlkcid) {
                     }
                     parent.querySelector('li.clearfix:first-child').appendChild(hwLink)
                 }
-            }, {
-                'wlkcid': wlkcid
             }
         )
     } else {
