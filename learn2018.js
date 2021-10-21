@@ -1,466 +1,435 @@
 // ==UserScript==
-// @icon         https://www.tsinghua.edu.cn/images/favicon.ico
+// @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂1202助手
-// @namespace    exhen32@live.com
-// @version      2021年10月17日00版
-// @description  微调排版，提醒更醒目; 支持导出日历，课程一目了然；课件批量下载，公告一键标记，拯救强迫症。
-// @require      http://cdn.bootcss.com/jquery/3.2.1/jquery.min.js
-// @require      https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.min.js
+// @namespace    thuyesh@outlook.com
+// @version      2021年10月21日00版
+// @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
-// @author       Exhen
+// @grant        GM.xmlHttpRequest
+// @connect      zhjw.cic.tsinghua.edu.cn
+// @author       thuyesh
 // @match        http*://learn.tsinghua.edu.cn/f/wlxt/index/course/student/
 // @connect      learn.tsinghua.edu.cn
 // @updateURL    https://greasyfork.org/scripts/422447-%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%822018%E5%8A%A9%E6%89%8B/code/%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%822018%E5%8A%A9%E6%89%8B.user.js
-// @run-at       document-start
+// @run-at       document-end
 // @updateURL    https://greasyfork.org/scripts/422447/code/user.js
 // ==/UserScript==
 
-var blocker = $('<div class="blocker" id="manualAlert" style="position: fixed;width: 100%;height: 100%;background: #4646466b;z-index: 999;"></div>')
+document.head.appendChild(document.createElement('style'))
+const sheet = document.styleSheets[document.styleSheets.length - 1];
 
-$('head').append('<style type="text/css">.fixedCenter {left: 50%;position: absolute;right: 50%;top: 50%;bottom: 50%;}')
+[
+`.unsee {
+    display: none;
+}`,`
+body.loading * {
+    cursor: progress !important;
+}
+`,`
+.boxdetail .state li.clearfix span.stud.number {
+    display: block;
+    font-size: 3em;
+    padding-left: 0;
+    text-align: center;
+}
+`,`
+.boxdetail .state li.clearfix a.number+p {
+    display: none;
+}
+`,`
+.p_img {
+    display: none;
+}
+`,`
+ul.stu.clearfix li.clearfix:first-child {
+    text-align: center;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+}
+`,`
+ul.stu.clearfix li.clearfix:first-child a {
+    text-decoration: underline;
+    font-size: 1.5em;
+    color: black;
+}
+`,`
+ul.stu.clearfix.clean li.clearfix:first-child {
+    background-color: lightgreen;
+    color: white;
+    font-size: 2em;
+    font-weight: bolder;
+}
+`,`
+ul.stu.clearfix.hw-yellow li.clearfix:first-child {
+    background-color: gold;
+}
+`,`
+ul.stu.clearfix.hw-orange li.clearfix:first-child {
+    background-color: orange;
+}
+`,`
+ul.stu.clearfix.hw-red li.clearfix:first-child {
+    background-color: red;
+}
+`,`
+ul.stu.clearfix.hw-red li.clearfix:first-child a {
+    color: yellow;
+}
+`,`
+ul.stu.clearfix.hw-overdue li.clearfix:first-child {
+    background-color: lightgrey;
+}
+`,`
+ul.stu.clearfix.clean li.clearfix:first-child::after {
+    content: "✓";
+}
+`,`
+.state.stu.clearfix .operations {
+    margin-top: 0.5em;
+}
+`,`
+button.operation {
+    background-color: white;
+    padding: 0.3em;
+    border: 1px grey solid;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background-color 0.1s;
+}
+`,`
+button.operation:not(:first-child) {
+    margin-left: 1em;
+}
+`,`
+button.operation:hover, button.operation:active {
+    background-color: lightgrey;
+}
+`,`
+.boxdetail .state .num {
+    margin-right: 1em;
+}
+`,`
+.header#banner .w, body .content, .footer#banner_footer .w {
+    width: unset;
+}
+`].forEach((rule) => sheet.insertRule(rule, 0))
 
-$('head').append('<style type="text/css">.myToobar {margin: 5px;display: inline-block;background: white;border: 1px solid gray;padding: 5px;border-radius: 5px; color:black} .myToobar a {color: black}')
+function setLoading() {
+    document.body.classList.add('loading')
+}
 
-var csrf = '';
-var dummy = {
-    "sEcho": 1,
-    "iColumns": 8,
-    "sColumns": ",,,,,,,",
-    "iDisplayStart": 0,
-    "iDisplayLength": "30",
-    "mDataProp_0": "wz",
-    "bSortable_0": false,
-    "mDataProp_1": "bt",
-    "bSortable_1": true,
-    "mDataProp_2": "mxdxmc",
-    "bSortable_2": true,
-    "mDataProp_3": "zywcfs",
-    "bSortable_3": true,
-    "mDataProp_4": "kssj",
-    "bSortable_4": true,
-    "mDataProp_5": "jzsj",
-    "bSortable_5": true,
-    "mDataProp_6": "jzsj",
-    "bSortable_6": true,
-    "mDataProp_7": "function",
-    "bSortable_7": false,
-    "iSortCol_0": 5,
-    "sSortDir_0": "desc",
-    "iSortCol_1": 6,
-    "sSortDir_1": "desc",
-    "iSortingCols": 2,
-    "wlkcid": "2021-2022-1142765385"
-};
-var shallowCopyObject = function(obj) {
-    return Object.fromEntries(Object.entries(obj));
-};
-var fetchResponse = function(url, method, data) {
-    return fetch(url.includes('?') ? (url + '&_csrf=' + csrf) : (url + '?_csrf=' + csrf),
-          {
+function unsetLoading() {
+    document.body.classList.remove('loading')
+}
+
+var csrf = ''
+const dummy = {
+    'sEcho': 1,
+    'iColumns': 8,
+    'sColumns': ',,,,,,,',
+    'iDisplayStart': 0,
+    'iDisplayLength': '30',
+    'mDataProp_0': 'wz',
+    'bSortable_0': false,
+    'mDataProp_1': 'bt',
+    'bSortable_1': true,
+    'mDataProp_2': 'mxdxmc',
+    'bSortable_2': true,
+    'mDataProp_3': 'zywcfs',
+    'bSortable_3': true,
+    'mDataProp_4': 'kssj',
+    'bSortable_4': true,
+    'mDataProp_5': 'jzsj',
+    'bSortable_5': true,
+    'mDataProp_6': 'jzsj',
+    'bSortable_6': true,
+    'mDataProp_7': 'function',
+    'bSortable_7': false,
+    'iSortCol_0': 5,
+    'sSortDir_0': 'desc',
+    'iSortCol_1': 6,
+    'sSortDir_1': 'desc',
+    'iSortingCols': 2,
+    'wlkcid': ''
+}
+function shallowCopyObject(obj) {
+    return Object.fromEntries(Object.entries(obj))
+}
+function fetchResponse(url, method, data) {
+    return fetch(url.includes('?') ? (url + '&_csrf=' + csrf) : (url + '?_csrf=' + csrf), {
         method: method,
-        headers: { 'Accept': 'application/json, text/javascript, */*; q=0.01',
-                  'Cache-Control': 'max-age=0',
-                  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Cache-Control': 'max-age=0',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         credentials: 'include',
         referrer: 'https://learn.tsinghua.edu.cn/',
-        referrerPolicy: 'origin',
+        referrerPolicy: 'strict-origin-when-cross-origin',
         body: method.toUpperCase() === 'POST' ? new URLSearchParams({
-            "aoData": JSON.stringify(Object.entries(Object.assign(shallowCopyObject(dummy), data)).map(function(e) { return { 'name': e[0], 'value': e[1] } })) }) : undefined,
-    });
-};
-var fetchJSON = function(url, method, meta, callback, data) {
-    fetchResponse(url, method, data).then(function(response) {
-        if(response.ok) {
+            'aoData': JSON.stringify(Object.entries(Object.assign(shallowCopyObject(dummy), data)).map(function (e) {
+                return {
+                    'name': e[0],
+                    'value': e[1]
+                }
+            }))
+        }) : undefined,
+    })
+}
+function fetchJSON(url, method, data) {
+    return fetchResponse(url, method, data).then(function (response) {
+        if (response.ok) {
             return response.json()
         } else {
-            callback(null, meta, url)
+            return Promise.resolve()
         }
-    }).then(function(json) { callback(json, meta, url) });
-};
-var getJSON = function (url, meta, callback) {
-    fetchJSON(url, 'GET', meta, callback);
-};
-
-function PrefixInteger(num, length) {
-    return (Array(length).join(0) + num).slice(-length);
+    })
+}
+function getJSON(url) {
+    return fetchJSON(url, 'GET')
 }
 
-function init(force) {
-    if (force || (!document.getElementById("dUietC") && $('ul.stu').length)) {
-        csrf = new URL($('.p_img>img')[0].src).searchParams.get('_csrf');
-        var dUietC = document.createElement("a");
-        dUietC.id = "dUietC";
-        document.getElementsByTagName("html")[0].appendChild(dUietC);
-
-        console.log('网络学堂2018助手 is running!')
-        // 新通知数量重新排版
-        $('.unsee').remove();
-        $('li.clearfix').each(function () {
-            $(this).css('height', '90px')
-            $(this).css('padding', '8px 8px')
-            if (parseInt($(this).find('span.stud').text()) > 0) {
-                $(this).find('span.stud').css('font-size', '50px');
-                $(this).find('span.stud').css('display', 'block');
-                $(this).find('span.stud').css('padding-left', 'none');
-                $(this).find('span.stud').css('text-align', 'center');
-                //$(this).find('span.name').text($(this).find('span.liulan').text());
-                $(this).find('span.liulan').remove();
-            } else {
-                $(this).find('span.stud').remove();
-            }
-
-        })
-        $('ul.stu').each(function () {
-            $(this).find('li').first().css('padding', '0px');
-        })
-
-        $('dd.stu').each(function () {
-            // 图片提醒
-            //var wlkcid = $(this).find('.hdtitle a').attr('href').match(/(?<=wlkcid=).*/);
-            var wlkcid = $(this).find('.hdtitle a').attr('href').slice(43);
-            $(this).attr('id', wlkcid)
-            if (parseInt($(this).find('span.green').text()) > 0) {
-                fetchJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kczy/zy/student/zyListWj`, 'POST', null, function (doc, meta, url) {
-                    if (doc) {
-                        var ddl = 0;
-                        var now = new Date();
-                        for (var i = 0; i < doc.object.iTotalRecords; i++) {
-                            if (ddl <= 0 || (ddl > doc.object.aaData[i].jzsj && doc.object.aaData[i].jzsj > now.getTime())) {
-                                ddl = doc.object.aaData[i].jzsj
-                            }
-                        }
-                        console.log(ddl)
-                        now = new Date();
-                        var time = ddl - now.getTime();
-                        console.log(time)
-                        var days = Math.ceil(time / 86400000);
-                        if (time <= 0) {
-                            $(`#${wlkcid}`).find('li.clearfix').first().css('background-color', 'gray');
-                            $(`#${wlkcid}`).find('li.clearfix').first().append(`<span style="color: red;font-size: 16px;padding:  10px 18px;line-height: 18px;width: 18px;text-align: center;display: block;float: right;">已经截止</span>`)
-                        } else if (time <= 86400000) { //少于1天
-                            $(`#${wlkcid}`).find('li.clearfix').first().css('background-color', 'red');
-                            $(`#${wlkcid}`).find('li.clearfix').first().append(`<span style="color: black;font-size: 16px;padding:  10px 18px;line-height: 18px;width: 18px;text-align: center;display: block;float: right;">最后一天</span>`)
-                        } else {
-                            $(`#${wlkcid}`).find('li.clearfix').first().css('background-color', 'orange');
-                            $(`#${wlkcid}`).find('li.clearfix').first().append(`<span style="color: red;font-size: 16px;padding: 10px 18px;line-height: 18px;width: 18px;text-align: center;display: block;float: right;">还剩<span style="text-align: center;">${days}</span>天</span>`)
-                        }
-                        $(`#${wlkcid}`).find('p.p_img').remove();
+function displayDDL(e, wlkcid) {
+    var parent = e.parentElement.parentElement.parentElement
+    if (parseInt(e.innerText) > 0) {
+        fetchJSON('http://learn.tsinghua.edu.cn/b/wlxt/kczy/zy/student/zyListWj', 'POST').then(
+            function (json) {
+                if(json) {
+                    var now = Date.now()
+                    var deadlines = json.object.aaData.filter((hw) => hw.jzsj - now > 0)
+                    var hwLink = document.createElement('a')
+                    if(deadlines.length === 0) {
+                        hwLink.innerText = '已过期'
+                        parent.classList.add('hw-overdue')
+                    } else {
+                        var deadline = deadlines.reduce((hw1, hw2) => (hw1.jzsj > hw2.jzsj ? hw2 : hw1))
+                        var days = Math.floor((deadline.jzsj - now) / 1000 / 60 / 60 / 24)
+                        hwLink.innerText = `剩余 ${days} 天`
+                        hwLink.href = `https://learn.tsinghua.edu.cn/f/wlxt/kczy/zy/student/viewZy?wlkcid=${deadline.wlkcid}&sfgq=0&zyid=${deadline.zyid}&xszyid=${deadline.xszyid}`
+                        const bgColors = ['hw-red', 'hw-red', 'hw-orange', 'hw-orange', 'hw-orange', 'hw-orange', 'hw-orange']
+                        parent.classList.add(bgColors[days] ? bgColors[days] : 'hw-yellow')
                     }
-                }, { "wlkcid": wlkcid});
-            } else {
-                $(this).find('li.clearfix').first().css('background-color', 'lightgreen');
-                $(this).find('li.clearfix').first().append(`<span style="color: black;font-size: 16px;padding: 10px 18px;line-height: 18px;width: 18px;text-align: center;display: block;float: right;">没有作业</span>`)
-                $(this).find('p.p_img').remove();
+                    parent.querySelector('li.clearfix:first-child').appendChild(hwLink)
+                }
+            }, {
+                'wlkcid': wlkcid
             }
+        )
+    } else {
+        parent.classList.add('clean')
+    }
+}
 
-            // 导出日历
-            var calendarBtn = $('<p class="calendar_btn myToobar"><a href="javascript:void(0)">导出上课时间到日历文件</a></p>');
-            calendarBtn.click(function () {
-                console.log($(this).attr('class'))
-                var classTitle = $(this).parent().parent().find('a.stu').text().replace(/\(.*-.*\)/, '').trim();
-                var classDesc = $(this).parent().parent().find('.stu_btn_pai span').last().attr('title');
-                var classTeacher = $(this).parent().parent().find('.stu_btn span').text();
-                var thisSems = $('#profile0-tab').attr('onClick').match(/\(.*-.*\)/)
-                var classUntil = thisSems[0].split('-')[1] + (thisSems[0].split('-')[2] > 1 ? '0101' : '0701') + 'T000000Z';
-                console.log(classDesc);
-                if (classDesc && !classDesc.match('星期第0节')) {
-                    for (var i = 0; i < classDesc.split(',').length; i++) {
-                        var eachClass = classDesc.split(',')[i];
-                        console.log(eachClass)
-                        var classLocation = eachClass.split('，')[1];
-                        var classTimeBegin = '',
-                            classTimeEnd = $(),
-                            classWeek = '';
-                        switch (eachClass.match(/星期(.)/)[1]) {
-                            case '日':
-                                classWeek = 'SU';
-                                break;
-                            case '一':
-                                classWeek = 'MO';
-                                break;
-                            case '二':
-                                classWeek = 'TU';
-                                break;
-                            case '三':
-                                classWeek = 'WE';
-                                break;
-                            case '四':
-                                classWeek = 'TH';
-                                break;
-                            case '五':
-                                classWeek = 'FR';
-                                break;
-                            case '六':
-                                classWeek = 'SA';
-                                break;
-                        }
-                        var now = new Date();
-                        var today = PrefixInteger(now.getUTCFullYear(), 4) + PrefixInteger(now.getUTCMonth() + 1, 2) + PrefixInteger(now.getUTCDate(), 2);
-                        switch (eachClass.match(/第(.)节/)[1]) {
-                            case '1':
-                                var classTimeBegin = today + 'T000000Z';
-                                var classTimeEnd = today + 'T013500Z';
-                                break;
-                            case '2':
-                                var classTimeBegin = today + 'T015000Z';
-                                var classTimeEnd = today + 'T041500Z';
-                                break;
-                            case '3':
-                                var classTimeBegin = today + 'T053000Z';
-                                var classTimeEnd = today + 'T070500Z';
-                                break;
-                            case '4':
-                                var classTimeBegin = today + 'T072000Z';
-                                var classTimeEnd = today + 'T085500Z';
-                                break;
-                            case '5':
-                                var classTimeBegin = today + 'T090500Z';
-                                var classTimeEnd = today + 'T104000Z';
-                                break;
-                            case '6':
-                                var classTimeBegin = today + 'T112000Z';
-                                var classTimeEnd = today + 'T134500Z';
-                                break;
-                        }
-                        var calendarData = `BEGIN:VCALENDAR\nVERSION:2.0\nMETHOD:PUBLISH\nBEGIN:VEVENT\nORGANIZER:${classTeacher}\nDTSTART;TZID=Asia/Shanghai:${classTimeBegin}\nDTEND;TZID=Asia/Shanghai:${classTimeEnd}\nRRULE:FREQ=WEEKLY;BYDAY=${classWeek};UNTIL=${classUntil};WKST=MO\nLOCATION:${classLocation}\nSUMMARY:${classTitle}（${classTeacher}）\nDESCRIPTION:${classDesc}\nPRIORITY:5\nCLASS:PUBLIC\nBEGIN:VALARM\nTRIGGER:-PT15M\nACTION:DISPLAY\nDESCRIPTION:Reminder\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
-                        var file = new File([calendarData], (classTitle + '-' + i + '.ics'), {
-                            type: "text/plain;charset=utf-8"
-                        });
-                        saveAs(file)
+function saveNewFiles(e, wlkcid) {
+    getJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/kjxxbByWlkcidAndSizeForStudent?size=999&wlkcid=${wlkcid}`).then((json) => {
+        if(json) {
+            var files = json.object.filter(f => f.isNew )
+            if(files.length === 0) {
+                alert('无新课件')
+            } else {
+                var size = files.reduce((i, file) => i + file.wjdx, 0)
+                const sizeSuffix = ['kB', 'MB', 'GB', 'TB']
+                var humanReadable = sizeSuffix.reduce((size, name) => {
+                    if(size[0] >= 1024) {
+                        return [size[0] / 1024, name]
+                    } else {
+                        return size
                     }
-                    alert('日历文件下载成功，使用Outlook等邮件客户端打开即可将日历同步至邮件账户。')
-
-                } else {
-                    alert('课程时间错误，无法导出。')
+                }, [size, 'B'])
+                if(confirm(`下载以下 ${humanReadable[0].toFixed(2)} ${humanReadable[1]} 的新课件？\n→ ${files.map(f => `${f.bt} - ${f.fileSize}`).join('\n→ ')}`)) {
+                    files.forEach(f => window.open(`http://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/downloadFile?sfgk=0&wjid=${f.wjid}`))
                 }
+            }
+        }
+    })
+}
 
-            })
-            $(this).find('div.state.stu').append(calendarBtn);
-
-            // 作业日历
-            var ddlBtn = $('<p class="calendar_btn myToobar"><a href="javascript:void(0)">导出作业DDL到日历文件</a></p>');
-            ddlBtn.click(function () {
-                blockerTemp = blocker;
-                blockerTemp.addClass('ddlBtn')
-                $('body').prepend(blockerTemp);
-                $('.blocker.ddlBtn').empty();
-                $('.blocker.ddlBtn').append('<span class="fixedCenter" style="font-size:30px;color:white">Loading...</span>')
-                if (parseInt($(this).parent().parent().parent().find('span.green').text()) > 0) {
-                    var classTitle = $(this).parent().parent().find('a.stu').text().replace(/\(.*-.*\)/, '').trim();
-                    var classTeacher = $(this).parent().parent().find('.stu_btn span').text();
-                    getJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kczy/zy/student/index/zyListWj?wlkcid=${wlkcid}&size=999`, null, function (doc, meta, url) {
-                        $('.blocker.ddlBtn').remove();
-                        if (doc) {
-                            var ddl = 0;
-                            for (var i = 0; i < doc.object.iTotalRecords; i++) {
-                                var current = doc.object.aaData[i];
-                                var tempDate = new Date();
-                                tempDate.setTime(current.jzsj - 3600000);
-                                console.log(current.jzsj)
-                                var tempDateBefore = new Date();
-                                tempDateBefore.setTime(current.jzsj - 86400000 - 3600000);
-                                var currDDL = PrefixInteger(tempDate.getUTCFullYear(), 4) + PrefixInteger(tempDate.getUTCMonth() + 1, 2) + PrefixInteger(tempDate.getUTCDate(), 2) + 'T' + PrefixInteger(tempDate.getUTCHours(), 2) + PrefixInteger(tempDate.getUTCMinutes(), 2) + PrefixInteger(tempDate.getUTCSeconds(), 2) + 'Z';
-                                var currDDLBefore = PrefixInteger(tempDateBefore.getUTCFullYear(), 4) + PrefixInteger(tempDateBefore.getUTCMonth() + 1, 2) + PrefixInteger(tempDateBefore.getUTCDate(), 2) + 'T' + PrefixInteger(tempDateBefore.getUTCHours(), 2) + PrefixInteger(tempDateBefore.getUTCMinutes(), 2) + PrefixInteger(tempDateBefore.getUTCSeconds(), 2) + 'Z';
-                                var currTitle = current.bt;
-
-                                var calendarData = `BEGIN:VCALENDAR\nVERSION:2.0\nMETHOD:PUBLISH\nBEGIN:VEVENT\nORGANIZER:${classTeacher}\nDTSTART;TZID=Asia/Shanghai:${currDDLBefore}\nDTEND;TZID=Asia/Shanghai:${currDDL}\nSUMMARY:${currTitle}（${classTitle}）\nDESCRIPTION:${classTitle}（${classTeacher}），截止时间：${current.jzsjStr}\nPRIORITY:5\nCLASS:PUBLIC\nBEGIN:VALARM\nTRIGGER:-PT1440M\nACTION:DISPLAY\nDESCRIPTION:Reminder\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
-                                var file = new File([calendarData], (classTitle + '-' + PrefixInteger(i, 2) + '-' + currTitle + '.ics'), {
-                                    type: "text/plain;charset=utf-8"
-                                });
-                                saveAs(file)
-
-                            }
-                            alert('日历文件下载成功，使用Outlook等邮件客户端打开即可将日历同步至邮件账户。')
-                        } else {
-                            alert('获取列表失败！请检查网络。')
-                        }
-                    })
-
-                } else {
-                    $('.blocker.ddlBtn').remove();
-                    alert('暂时没有可以导出的DDL')
+function markRead(e, wlkcid) {
+    setLoading()
+    getJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kcgg/wlkc_ggb/student/kcggListXs?size=999&wlkcid=${wlkcid}`).then(json => {
+        if(json) {
+            var unreadItems = json.object.aaData.filter(e => e.sfyd === '否')
+            if (unreadItems.length === 0) {
+                alert('无公告')
+            } else if (confirm(`按确认键将以下公告设为已读：\n${unreadItems.map(function(e) { return '→ ' + e.bt }).join('\n')}`)) {
+                let total = unreadItems.length
+                let count = 0
+                var handleResponse = response => {
+                    count++
+                    if (total === count) {
+                        alert('已读完成')
+                        location.reload()
+                    }
                 }
-
-                delete blockerTemp;
-            })
-            $(this).find('div.state.stu').append(ddlBtn);
-
-            // 一键已读
-            var notificationBtn = $('<p class="calendar_btn myToobar"><a href="javascript:void(0)">新公告一键标记已读</a></p>');
-
-            notificationBtn.click(function () {
-                var unreadNum = parseInt($(this).parent().parent().parent().find('span.orange.stud').text());
-                if (unreadNum > 0) {
-                    blockerTemp = blocker;
-                    blockerTemp.attr('class', 'blocker notificationBtn')
-                    $('body').prepend(blockerTemp);
-                    $('.blocker.ddlBtn').empty();
-                    $('.blocker.notificationBtn').append('<span class="fixedCenter" style="font-size:30px;color:white">Loading...</span>')
-                    getJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kcgg/wlkc_ggb/student/kcggListXs?size=999&wlkcid=${wlkcid}`, null, function (doc, meta, url) {
-                        $('.blocker.notificationBtn').remove();
-                        if (doc) {
-                            var unreadItems = doc.object.aaData.filter(function(e) { return e.sfyd === '否' });
-                            if(unreadItems.length === 0) {
-                                // TODO: alert
-                            } else if(confirm(`按确认键将以下公告设为已读：\n${unreadItems.map(function(e) { return '- ' + e.bt }).join('\n\n')}`)) {
-                                let total = unreadItems.length;
-                                let count = 0;
-                                let successNum = 0;
-                                var handleResponse = function(response) {
-                                    count++;
-                                    if(response.ok) { ++successNum; }
-                                    if (total === count) {
-                                        if (successNum === count) {
-                                            alert('一键已读成功！');
-                                            location.reload();
-                                        } else {
-                                            alert(`${unreadNum-successNum}/${unreadNum}条公告标记已读失败！`);
-                                            location.reload();
-                                        }
-                                    }
-                                };
-                                for(var e of unreadItems) {
+                unreadItems.forEach(e =>
                                     fetchResponse(`http://learn.tsinghua.edu.cn/f/wlxt/kcgg/wlkc_ggb/student/beforeViewXs?wlkcid=${wlkcid}&id=${e.ggid}`, 'GET')
-                                    .then(handleResponse);
-                                }
-                            }
-                            if (unreadItems.length !== unreadNum) {
-                                alert('学堂系统BUG，未读数量显示不对，建议反馈给ITS！')
-                            }
-                        } else {
-                            alert('获取列表失败！请检查网络。')
-                        }
-                    })
-                    delete blockerTemp
-                } else {
-                    alert('没有未读公告。')
-                }
-            })
-
-            $(this).find('div.state.stu').append(notificationBtn);
-
-            // 批量下载
-            function downloadFromJson(doc, flagForOld, downloadList, names) {
-                var totalSize = 0;
-                console.log(doc);
-                for (var i = 0; i < doc.object.length; i++) {
-                    if (!flagForOld && !doc.object[i].isNew) {
-                        continue;
-                    }
-                    downloadList.push(doc.object[i].wjid);
-                    names.push(doc.object[i].bt);
-                    totalSize = totalSize + doc.object[i].wjdx;
-                }
-                return totalSize
+                                            .then(handleResponse)
+                )
             }
+        } else {
+            alert('网络错误')
+            unsetLoading()
+        }
+    })
+}
 
-            function getFileSize(fileByte) {
-                var fileSizeByte = fileByte;
-                var fileSizeMsg = "";
-                if (fileSizeByte < 1048576) fileSizeMsg = (fileSizeByte / 1024).toFixed(2) + "KB";
-                else if (fileSizeByte == 1048576) fileSizeMsg = "1MB";
-                else if (fileSizeByte > 1048576 && fileSizeByte < 1073741824) fileSizeMsg = (fileSizeByte / (1024 * 1024)).toFixed(2) + "MB";
-                else if (fileSizeByte > 1048576 && fileSizeByte == 1073741824) fileSizeMsg = "1GB";
-                else if (fileSizeByte > 1073741824 && fileSizeByte < 1099511627776) fileSizeMsg = (fileSizeByte / (1024 * 1024 * 1024)).toFixed(2) + "GB";
-                else fileSizeMsg = "超过1TB";
-                return fileSizeMsg;
-            }
+function displayOperations(e, wlkcid) {
+    const operations = {
+        '所有公告标为已读': markRead,
+        '批量保存新课件': saveNewFiles,
+    }
+    var buttonContainer = document.createElement('div')
+    buttonContainer.classList.add('operations')
+    for(var i in operations) {
+        var button = document.createElement('button')
+        button.innerText = i
+        button.classList.add('operation')
+        button.onclick = (operation => (() => operation(e, wlkcid)))(operations[i])
+        buttonContainer.appendChild(button)
+    }
+    e.parentElement.parentElement.parentElement.parentElement.appendChild(buttonContainer)
+}
 
-            var attachmentAllBtn = $('<p class="calendar_btn myToobar"><a href="javascript:void(0)">全部课件批量下载</a></p>');
-            attachmentAllBtn.click(function () {
-                blockerTemp = blocker;
-                blockerTemp.attr('class', 'blocker attachmentAllBtn')
-                $('body').prepend(blockerTemp);
-                $('.blocker.ddlBtn').empty();
-                $('.blocker.attachmentAllBtn').append('<span class="fixedCenter" style="font-size:30px;color:white">Loading...</span>')
-                getJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/kjxxbByWlkcidAndSizeForStudent?size=999&wlkcid=${wlkcid}`, null, function (doc, meta, url) {
-                    $('.blocker.attachmentAllBtn').remove();
-                    if (doc) {
-                        // console.log(doc)
-                        var downloadList = [];
-                        var names = [];
-                        var totalSize = downloadFromJson(doc, true, downloadList, names);
-                        // console.log(downloadList, totalSize)
-                        if (downloadList.length) {
-                            if (confirm(`按确认键开始下载全部${downloadList.length}个文件（共计${getFileSize(totalSize)}）：\n`
-                                        + `${'《' + names.join('》\n《') + '》'}。\n`
-                                        + `如果下载未开始，请检查浏览器是否拦截了本网页的弹出窗口（例如Chrome地址栏最右侧出现带小红叉的图标）`)) {
-                                for (var i = 0; i < downloadList.length; i++) {
-                                    window.open('http://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/downloadFile?sfgk=0&wjid=' + downloadList[i])
-                                }
-                            }
-                        } else {
-                            alert('暂时无文件供下载。')
-                        }
-
+function fetchEvents(year, month, events) {
+    var thisMonth = new Date()
+    thisMonth.setFullYear(year, month, 1)
+    var nextMonth = new Date()
+    nextMonth.setFullYear(year, month + 1, 1)
+    return new Promise((resolve, reject) => {
+        GM.xmlHttpRequest({
+            method: "GET",
+            url: `https://zhjw.cic.tsinghua.edu.cn/jxmh_out.do?m=bks_jxrl_all&p_start_date=${thisMonth.toISOString().slice(0, 7).replaceAll('-', '')}01`
+                    + `&p_end_date=${nextMonth.toISOString().slice(0, 7).replaceAll('-', '')}01&jsoncallback=no_such_method`,
+            onload: response => {
+                if(response.status < 400) {
+                    var text = response.responseText
+                    var monthCalendar = JSON.parse(text.slice(15, -1))
+                    if(monthCalendar.length === 0) {
+                        resolve(events)
                     } else {
-                        alert('获取列表失败！请检查网络。')
+                        resolve(fetchEvents(year, month + 1, events.concat(
+                            monthCalendar.filter(event => (new Date(event.nq)).getMonth() === thisMonth.getMonth())
+                        )))
                     }
-                })
-                delete blockerTemp;
-            })
-            $(this).find('div.state.stu').append(attachmentAllBtn);
-            var attachmentNewBtn = $('<p class="calendar_btn myToobar"><a href="javascript:void(0)">新课件批量下载</a></p>');
-            attachmentNewBtn.click(function () {
-                blockerTemp = blocker;
-                blockerTemp.attr('class', 'blocker attachmentNewBtn')
-                $('body').prepend(blockerTemp);
-                $('.blocker.ddlBtn').empty();
-                $('.blocker.attachmentNewBtn').append('<span class="fixedCenter" style="font-size:30px;color:white">Loading...</span>')
-                getJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/kjxxbByWlkcidAndSizeForStudent?size=999&wlkcid=${wlkcid}`, null, function (doc, meta, url) {
-                    $('.blocker.attachmentNewBtn').remove();
-                    if (doc) {
-                        console.log(doc)
-                        var downloadList = [];
-                        var names = [];
-                        var totalSize = downloadFromJson(doc, false, downloadList, names);
-                        console.log(downloadList, totalSize)
-                        if (downloadList.length) {
-                            if (confirm(`按确认键开始下载全部${downloadList.length}个文件（共计${getFileSize(totalSize)}）：\n`
-                                        + `${'《' + names.join('》\n《') + '》'}。\n`
-                                        + `如果下载未开始，请检查浏览器是否拦截了本网页的弹出窗口（例如Chrome地址栏最右侧出现带小红叉的图标）`)) {
-                                for (var i = 0; i < downloadList.length; i++) {
-                                    window.open('http://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/downloadFile?sfgk=0&wjid=' + downloadList[i])
-                                }
-                            }
-                        } else {
-                            alert('暂时无文件供下载。')
-                        }
-
-                    } else {
-                        alert('获取列表失败！请检查网络。')
-                    }
-                })
-                delete blockerTemp;
-            })
-            $(this).find('div.state.stu').append(attachmentNewBtn);
-
+                }
+            },
+            onerror: reject,
         })
+    })
+}
 
-        return true
-    } else {
-        console.log('nothing happened!')
-        return false
+function getTZ(date, time) {
+    return `${date.replaceAll('-', '')}T${time.replaceAll(':', '')}00`
+}
+
+function makeIEvent(event, prior) {
+    return `BEGIN:VEVENT\r
+UID:${getTZ(event.nq, event.kssj)}-${Math.floor(Math.random() * 10000)}@tsinghua.edu.cn\r
+DTSTAMP;TZID=Asia/Shanghai:${getTZ(event.nq, event.kssj)}\r
+DTSTART;TZID=Asia/Shanghai:${getTZ(event.nq, event.kssj)}\r
+DTEND;TZID=Asia/Shanghai:${getTZ(event.nq, event.jssj)}\r
+SUMMARY:${event.nr}\r
+LOCATION:${event.dd}\r
+BEGIN:VALARM\r
+TRIGGER:-PT${prior}M\r
+ACTION:DISPLAY\r
+DESCRIPTION:${event.nr}前 ${prior} 分钟提醒\r
+END:VALARM\r
+END:VEVENT`
+}
+
+function makeICalendar(events, prior) {
+    return `BEGIN:VCALENDAR\r
+VERSION:2.0\r
+PRODID:-//Web THU Helper//iCalender//EN\r
+BEGIN:VTIMEZONE\r
+TZID:Asia/Shanghai\r
+BEGIN:STANDARD\r
+TZOFFSETFROM:+0800\r
+TZOFFSETTO:+0800\r
+TZNAME:CST\r
+DTSTART:19700101T000000\r
+END:STANDARD\r
+END:VTIMEZONE\r
+${events.map(makeIEvent, prior).join('\r\n')}\r
+END:VCALENDAR\r
+`
+}
+
+function calendarizeAll() {
+    setLoading()
+    getJSON('https://learn.tsinghua.edu.cn/b/kc/zhjw_v_code_xnxq/getCurrentAndNextSemester').then(json => {
+        if(json) {
+            var now = new Date(json.result.kssj)
+            var month = now.getMonth()
+            var year = now.getFullYear()
+            var alarmPrior = parseInt(prompt('日历文件可设置日程提醒，每节课提前多少分钟提醒？', 30))
+            if(alarmPrior > 0) {
+                fetchEvents(year, month, []).then(events => {
+                    unsetLoading()
+                    var blob = new Blob([makeICalendar(events, alarmPrior)], {type: "text/plain"})
+                    // eslint-disable-next-line no-undef
+                    saveAs(blob, `${json.result.xnxqmc}.ics`)
+                })
+            } else {
+                unsetLoading()
+            }
+        } else {
+            unsetLoading()
+        }
+    })
+}
+
+function customize() {
+    csrf = new URL(document.querySelector('.p_img>img').src).searchParams.get('_csrf');
+
+    document.querySelectorAll('span.stud').forEach(function (e) {
+        if (parseInt(e.innerText) > 0) {
+            e.classList.add('number')
+            e.parentElement.classList.add('number')
+        }
+
+        if (e.classList.contains('green')) {
+            var wlkcid = new URL(e.parentElement.href).searchParams.get('wlkcid')
+            displayDDL(e, wlkcid)
+            displayOperations(e, wlkcid)
+        }
+    })
+
+    if(!document.getElementById('calendarizer')) {
+        var container = document.getElementById('suoxuecourse')
+        var calendarButton = document.createElement('button')
+        calendarButton.classList.add('operation')
+        calendarButton.id = 'calendarizer'
+        calendarButton.style.marginLeft = '1em'
+        calendarButton.innerText = '导出所有课程至日历文件'
+        calendarButton.onclick = calendarizeAll;
+        container.parentElement.querySelector('dt.title').appendChild(calendarButton)
     }
 }
 
-window.addEventListener('load', function () {
-    var icon = $('<div id="manualScript"><a ref="javascript:void(0);"><i class="webicon-recycle"></i>手动加载</a></div>');
-    icon.find('a').click(function () {
-        init(true);
-    });
-    $('div.header div.w div.right').append(icon)
-
-    if(document.querySelector('dd.stu') === null) {
-        var container = document.getElementById('suoxuecourse');
-        var observer = new MutationObserver(function() {
-            if(document.querySelector('dd.stu') !== null) {
-                setTimeout(function() { init(true); }, 100);
-            }
-        });
-        observer.observe(container, { attributes: false, childList: true, subtree: false });
-    } else {
-      init();
+function init() {
+    if(!document.querySelector('.state.stu.clearfix .operations')) {
+        customize()
     }
-})
+}
+
+if (document.querySelector('dd.stu') === null) {
+    var container = document.getElementById('suoxuecourse')
+    var observer = new MutationObserver(function () {
+        if (document.querySelector('dd.stu') !== null) {
+            setTimeout(function () {
+                init()
+            }, 50)
+        }
+    })
+    observer.observe(container, {
+        attributes: false,
+        childList: true,
+        subtree: false
+    })
+} else {
+    init()
+}

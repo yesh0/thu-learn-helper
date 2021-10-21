@@ -5,14 +5,18 @@
 
 项目地址：[https://git.tsinghua.edu.cn/yesh19/learn2018helper](https://git.tsinghua.edu.cn/yesh19/learn2018helper) （清华 GitLab 似乎访客看不见。）
 
-项目来自 [https://github.com/Exhen/learn2018helper](https://github.com/Exhen/learn2018helper)。这里把悲伤蛙的图片去掉了，改为了更鲜明的颜色。
+原项目 [https://github.com/Exhen/learn2018helper](https://github.com/Exhen/learn2018helper)。
+
+现在代码完全重写了，代码许可证是 [AGPL](./LICENSE)。
 
 可以到科技服务队的微信推送里查看功能： [https://mp.weixin.qq.com/s/DflkCO-pMiiFrsMQEFyLTA](https://mp.weixin.qq.com/s/DflkCO-pMiiFrsMQEFyLTA)
 
 截图：
-![image.png](./screenshots/1.png)
+![image.png](./screenshots/v2.png)
 
 ## 更新日志
+
+2021.10.21. 所有代码重写，顺便增加一并导出所有课程日历功能。
 
 2021.10.17. 删去了未授权代码，切换“以前学期课程”再切回时自动刷新。
 
