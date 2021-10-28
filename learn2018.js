@@ -1,14 +1,15 @@
 // ==UserScript==
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂1202助手
-// @namespace    thuyesh@outlook.com
-// @version      2021年10月21日00版
+// @namespace    exhen32@live.com
+// @version      2021年10月28日00版
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
 // @grant        GM.xmlHttpRequest
 // @connect      zhjw.cic.tsinghua.edu.cn
 // @author       thuyesh
 // @match        http*://learn.tsinghua.edu.cn/f/wlxt/index/course/student/
+// @match        http*://learn.tsinghua.edu.cn/f/wlxt/*
 // @connect      learn.tsinghua.edu.cn
 // @updateURL    https://greasyfork.org/scripts/422447-%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%822018%E5%8A%A9%E6%89%8B/code/%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%822018%E5%8A%A9%E6%89%8B.user.js
 // @run-at       document-end
@@ -19,7 +20,17 @@ document.head.appendChild(document.createElement('style'))
 const sheet = document.styleSheets[document.styleSheets.length - 1];
 
 [
-`.unsee {
+`
+#banner .left a img {
+    cursor: pointer;
+    margin-top: 6px;
+    margin-bottom: 6px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    background: linear-gradient(90deg, rgb(67, 159, 226) 0%, rgb(75, 168, 234) 55.29%, rgb(0, 114, 198) 55.29%);
+    border-radius: 10px;
+}
+`,`.unsee {
     display: none;
 }`,`
 body.loading * {
@@ -414,20 +425,48 @@ function init() {
     }
 }
 
-if (document.querySelector('dd.stu') === null) {
-    var container = document.getElementById('suoxuecourse')
-    var observer = new MutationObserver(function () {
-        if (document.querySelector('dd.stu') !== null) {
-            setTimeout(function () {
-                init()
-            }, 50)
-        }
-    })
-    observer.observe(container, {
-        attributes: false,
-        childList: true,
-        subtree: false
-    })
-} else {
-    init()
+const homePath = '/f/wlxt/index/course/student/'
+if (window.location.pathname === homePath) {
+    if (document.querySelector('dd.stu') === null) {
+        var container = document.getElementById('suoxuecourse')
+        var observer = new MutationObserver(function () {
+            if (document.querySelector('dd.stu') !== null) {
+                setTimeout(function () {
+                    init()
+                }, 50)
+            }
+        })
+        observer.observe(container, {
+            attributes: false,
+            childList: true,
+            subtree: false
+        })
+    } else {
+        init()
+    }
+}
+
+var logo = document.querySelector('#banner .left a>img')
+if (logo) {
+    logo.parentElement.href = '#'
+    var iconMap = document.createElement('map')
+    iconMap.name = 'iconmap'
+    var iconMapArea1 = document.createElement('area')
+    var iconMapArea2 = document.createElement('area')
+    Object.entries({
+        shape: 'rect',
+        coords: '0,0,115,47',
+        href: homePath + 'index',
+        title: '登录界面',
+    }).forEach(entry => iconMapArea1.setAttribute(entry[0], entry[1]))
+    Object.entries({
+        shape: 'rect',
+        coords: '115,0,202,47',
+        href: homePath,
+        title: '我的课程',
+    }).forEach(entry => iconMapArea2.setAttribute(entry[0], entry[1]))
+    iconMap.appendChild(iconMapArea1)
+    iconMap.appendChild(iconMapArea2)
+    logo.parentElement.appendChild(iconMap)
+    logo.setAttribute('usemap', '#iconmap')
 }
