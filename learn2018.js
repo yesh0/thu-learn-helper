@@ -2,7 +2,7 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂1202助手
 // @namespace    exhen32@live.com
-// @version      2021年10月28日00版
+// @version      2021年10月29日00版
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
 // @grant        GM.xmlHttpRequest
@@ -362,7 +362,7 @@ TZNAME:CST\r
 DTSTART:19700101T000000\r
 END:STANDARD\r
 END:VTIMEZONE\r
-${events.map(makeIEvent, prior).join('\r\n')}\r
+${events.map(e => makeIEvent(e, prior)).join('\r\n')}\r
 END:VCALENDAR\r
 `
 }
