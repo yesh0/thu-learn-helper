@@ -3,6 +3,7 @@
 // @name         网络学堂1202助手
 // @namespace    exhen32@live.com
 // @version      2021年10月30日00版
+// @license      AGPL-3.0-or-later
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
 // @grant        GM.xmlHttpRequest
