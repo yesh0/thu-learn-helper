@@ -12,10 +12,13 @@
 可以到科技服务队的微信推送里查看功能： [https://mp.weixin.qq.com/s/DflkCO-pMiiFrsMQEFyLTA](https://mp.weixin.qq.com/s/DflkCO-pMiiFrsMQEFyLTA)
 
 截图：
-![image.png](./screenshots/v2.png)
-![image.png](./screenshots/v2.1.png)
+![导出所有课程日历、公告标记已读、下载新文件、DDL提醒](./screenshots/v2.png)
+![左上角图标链接改为指向“我的课程”](./screenshots/v2.1.png)
+![课程文件列表显示文件名](./screenshots/v2.2.png)
 
 ## 更新日志
+
+2021.10.30. 网络学堂课程文件列表添加显示文件名功能。
 
 2021.10.29. 修复导出课程日历提醒时间错误。
 

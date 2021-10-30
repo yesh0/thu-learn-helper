@@ -2,7 +2,7 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂1202助手
 // @namespace    exhen32@live.com
-// @version      2021年10月29日00版
+// @version      2021年10月30日00版
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
 // @grant        GM.xmlHttpRequest
@@ -123,6 +123,23 @@ button.operation:hover, button.operation:active {
 `,`
 .header#banner .w, body .content, .footer#banner_footer .w {
     width: unset;
+}
+`,`
+.playli ul li a span+span {
+    position: absolute;
+    display: none;
+    background-color: white;
+    border: 1px solid blue;
+    border-radius: 3px;
+    z-index: 10;
+    margin-right: 3em;
+    line-height: 1.2em;
+    padding: 0.2em;
+    line-break: anywhere;
+}
+`,`
+.playli ul li a:hover span+span {
+    display: inline-block;
 }
 `].forEach((rule) => sheet.insertRule(rule, 0))
 
@@ -392,7 +409,10 @@ function calendarizeAll() {
 }
 
 function customize() {
-    csrf = new URL(document.querySelector('.p_img>img').src).searchParams.get('_csrf');
+    for(var imgNode of document.querySelectorAll('img')) {
+        csrf = new URL(imgNode.src).searchParams.get('_csrf')
+        if(csrf) { break }
+    }
 
     document.querySelectorAll('span.stud').forEach(function (e) {
         if (parseInt(e.innerText) > 0) {
@@ -414,7 +434,7 @@ function customize() {
         calendarButton.id = 'calendarizer'
         calendarButton.style.marginLeft = '1em'
         calendarButton.innerText = '导出所有课程至日历文件'
-        calendarButton.onclick = calendarizeAll;
+        calendarButton.onclick = calendarizeAll
         container.parentElement.querySelector('dt.title').appendChild(calendarButton)
     }
 }
@@ -469,4 +489,36 @@ if (logo) {
     iconMap.appendChild(iconMapArea2)
     logo.parentElement.appendChild(iconMap)
     logo.setAttribute('usemap', '#iconmap')
+}
+
+const fileListPath = '/f/wlxt/kj/wlkc_kjxxb/student/beforePageList'
+if(window.location.pathname === fileListPath) {
+    var fileList = document.querySelector('.playli')
+    if(fileList) {
+        var fileListObserver = new MutationObserver(function (records) {
+            for(var record of records) {
+                for(let node of record.addedNodes) {
+                    console.log(node.nodeName)
+                    if(node.nodeName === 'UL') {
+                        let wjid = node.querySelector('li').getAttribute('wjid')
+                        fetchResponse(`https://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/downloadFile?sfgk=0&wjid=${wjid}`, 'HEAD').then(response => {
+                            var cdHeader = response.headers.get('Content-Disposition')
+                            if(cdHeader.startsWith('attachment; filename="') && cdHeader.endsWith('"')) {
+                                var attachmentName = decodeURIComponent(escape(JSON.parse(cdHeader.substring('attachment; filename='.length))))
+                                var fileListItem = node.querySelector('a')
+                                var fileNameSpan = document.createElement('span')
+                                fileNameSpan.innerText = attachmentName
+                                fileListItem.appendChild(fileNameSpan)
+                            }
+                        })
+                    }
+                }
+            }
+        })
+        fileListObserver.observe(fileList, {
+            attributes: false,
+            childList: true,
+            subtree: false
+        })
+    }
 }
