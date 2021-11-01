@@ -2,7 +2,7 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂1202助手
 // @namespace    exhen32@live.com
-// @version      2021年10月30日00版
+// @version      2021年11月01日00版
 // @license      AGPL-3.0-or-later
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
@@ -22,6 +22,18 @@ const sheet = document.styleSheets[document.styleSheets.length - 1];
 
 [
 `
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote,
+pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small,
+strike, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption,
+footer, header, menu, nav, output, ruby, section, summary, time, mark, audio, video, input {
+    cursor: unset;
+}
+`,`
+a span:hover {
+    text-decoration: underline;
+}
+`,`
 #banner .left a img {
     cursor: pointer;
     margin-top: 6px;
@@ -64,6 +76,12 @@ ul.stu.clearfix li.clearfix:first-child a {
     text-decoration: underline;
     font-size: 1.5em;
     color: black;
+}
+`,`
+ul.stu.clearfix li.clearfix:first-child a span {
+    display: block;
+    margin-top: 1em;
+    font-size: 0.6em;
 }
 `,`
 ul.stu.clearfix.clean li.clearfix:first-child {
@@ -235,7 +253,8 @@ function displayDDL(e, wlkcid) {
                     } else {
                         var deadline = deadlines.reduce((hw1, hw2) => (hw1.jzsj > hw2.jzsj ? hw2 : hw1))
                         var days = Math.floor((deadline.jzsj - now) / 1000 / 60 / 60 / 24)
-                        hwLink.innerText = `剩余 ${days} 天`
+                        var dueTime = new Date(deadline.jzsj + 8 * 60 * 60 * 1000).toISOString().substring(5, 16).replace('T', ' ')
+                        hwLink.innerHTML = `剩余 ${days} 天<span class="due-time">${dueTime} 截止</span>`
                         hwLink.href = `https://learn.tsinghua.edu.cn/f/wlxt/kczy/zy/student/viewZy?wlkcid=${deadline.wlkcid}&sfgq=0&zyid=${deadline.zyid}&xszyid=${deadline.xszyid}`
                         const bgColors = ['hw-red', 'hw-red', 'hw-orange', 'hw-orange', 'hw-orange', 'hw-orange', 'hw-orange']
                         parent.classList.add(bgColors[days] ? bgColors[days] : 'hw-yellow')
