@@ -2,7 +2,7 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂1202助手
 // @namespace    exhen32@live.com
-// @version      2021年11月01日00版
+// @version      2021年11月02日00版
 // @license      AGPL-3.0-or-later
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
@@ -42,6 +42,14 @@ a span:hover {
     padding-bottom: 5px;
     background: linear-gradient(90deg, rgb(67, 159, 226) 0%, rgb(75, 168, 234) 55.29%, rgb(0, 114, 198) 55.29%);
     border-radius: 10px;
+}
+`,`
+.nav #myTabs {
+    margin-bottom: 0;
+}
+`,`
+.nav #myTabContent .boxdetail {
+    margin-top: 0.3em;
 }
 `,`.unsee {
     display: none;
@@ -113,6 +121,17 @@ ul.stu.clearfix.hw-overdue li.clearfix:first-child {
 `,`
 ul.stu.clearfix.clean li.clearfix:first-child::after {
     content: "✓";
+}
+`,`
+.week-count {
+    display: inline-block;
+    font-size: 1em;
+}
+`,`
+.week-count span {
+    color: brown;
+    font-size: 1.2em;
+    margin: 0 0.2em 0 0.2em;
 }
 `,`
 .state.stu.clearfix .operations {
@@ -404,9 +423,10 @@ END:VCALENDAR\r
 `
 }
 
+const semesterUrl = 'https://learn.tsinghua.edu.cn/b/kc/zhjw_v_code_xnxq/getCurrentAndNextSemester'
 function calendarizeAll() {
     setLoading()
-    getJSON('https://learn.tsinghua.edu.cn/b/kc/zhjw_v_code_xnxq/getCurrentAndNextSemester').then(json => {
+    getJSON(semesterUrl).then(json => {
         if(json) {
             var now = new Date(json.result.kssj)
             var month = now.getMonth()
@@ -424,6 +444,18 @@ function calendarizeAll() {
             }
         } else {
             unsetLoading()
+        }
+    })
+}
+
+function addWeekCount(container) {
+    getJSON(semesterUrl).then(json => {
+        if(json) {
+            var week = Math.ceil((Date.now() - new Date(json.result.kssj)) / 1000 / 60 / 60 / 24 / 7)
+            var weekDiv = document.createElement('div')
+            weekDiv.innerHTML = `第<span>${week}</span>周：`
+            weekDiv.classList.add('week-count')
+            container.insertBefore(weekDiv, container.childNodes[0])
         }
     })
 }
@@ -448,14 +480,16 @@ function customize() {
     })
 
     if(!document.getElementById('calendarizer')) {
-        var container = document.getElementById('suoxuecourse')
+        var container = document.getElementById('suoxuecourse').parentElement.querySelector('dt.title')
         var calendarButton = document.createElement('button')
         calendarButton.classList.add('operation')
         calendarButton.id = 'calendarizer'
         calendarButton.style.marginLeft = '1em'
         calendarButton.innerText = '导出所有课程至日历文件'
         calendarButton.onclick = calendarizeAll
-        container.parentElement.querySelector('dt.title').appendChild(calendarButton)
+        container.appendChild(calendarButton)
+
+        addWeekCount(container)
     }
 }
 
