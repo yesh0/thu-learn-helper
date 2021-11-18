@@ -2,7 +2,7 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂1202助手
 // @namespace    exhen32@live.com
-// @version      2021年11月02日00版
+// @version      2021年11月18日00版
 // @license      AGPL-3.0-or-later
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
@@ -163,7 +163,7 @@ button.operation:hover, button.operation:active {
     width: unset;
 }
 `,`
-.playli ul li a span+span {
+.playli ul li a span+span.filename {
     position: absolute;
     display: none;
     background-color: white;
@@ -176,7 +176,7 @@ button.operation:hover, button.operation:active {
     line-break: anywhere;
 }
 `,`
-.playli ul li a:hover span+span {
+.playli ul li a:hover span+span.filename {
     display: inline-block;
 }
 `].forEach((rule) => sheet.insertRule(rule, 0))
@@ -555,16 +555,19 @@ if(window.location.pathname === fileListPath) {
                     console.log(node.nodeName)
                     if(node.nodeName === 'UL') {
                         let wjid = node.querySelector('li').getAttribute('wjid')
-                        fetchResponse(`https://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/downloadFile?sfgk=0&wjid=${wjid}`, 'HEAD').then(response => {
-                            var cdHeader = response.headers.get('Content-Disposition')
-                            if(cdHeader.startsWith('attachment; filename="') && cdHeader.endsWith('"')) {
-                                var attachmentName = decodeURIComponent(escape(JSON.parse(cdHeader.substring('attachment; filename='.length))))
-                                var fileListItem = node.querySelector('a')
-                                var fileNameSpan = document.createElement('span')
-                                fileNameSpan.innerText = attachmentName
-                                fileListItem.appendChild(fileNameSpan)
-                            }
-                        })
+                        if(!node.querySelector('.new')) {
+                            fetchResponse(`https://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/downloadFile?sfgk=0&wjid=${wjid}`, 'HEAD').then(response => {
+                                var cdHeader = response.headers.get('Content-Disposition')
+                                if(cdHeader.startsWith('attachment; filename="') && cdHeader.endsWith('"')) {
+                                    var attachmentName = decodeURIComponent(escape(JSON.parse(cdHeader.substring('attachment; filename='.length))))
+                                    var fileListItem = node.querySelector('a')
+                                    var fileNameSpan = document.createElement('span')
+                                    fileNameSpan.classList.add('filename')
+                                    fileNameSpan.innerText = attachmentName
+                                    fileListItem.appendChild(fileNameSpan)
+                                }
+                            })
+                        }
                     }
                 }
             }
