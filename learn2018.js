@@ -2,7 +2,7 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂1202助手
 // @namespace    exhen32@live.com
-// @version      2021年11月18日00版
+// @version      2022年3月6日00版
 // @license      AGPL-3.0-or-later
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
@@ -179,6 +179,10 @@ button.operation:hover, button.operation:active {
 .playli ul li a:hover span+span.filename {
     display: inline-block;
 }
+`,`
+*:focus {
+    box-shadow: 0px 0px 10px cyan;
+}
 `].forEach((rule) => sheet.insertRule(rule, 0))
 
 function setLoading() {
@@ -318,7 +322,7 @@ function markRead(e, wlkcid) {
             var unreadItems = json.object.aaData.filter(e => e.sfyd === '否')
             if (unreadItems.length === 0) {
                 alert('无公告')
-            } else if (confirm(`按确认键将以下公告设为已读：\n${unreadItems.map(function(e) { return '→ ' + e.bt }).join('\n')}`)) {
+            } else if (confirm(`按确认键将以下公告设为已读：\n${unreadItems.map(function(e) { return '→ ' + e.bt + (e.fjmc ? `（有附件 ${e.fjmc}）` : '') }).join('\n')}`)) {
                 let total = unreadItems.length
                 let count = 0
                 var handleResponse = response => {
@@ -451,7 +455,11 @@ function calendarizeAll() {
 function addWeekCount(container) {
     getJSON(semesterUrl).then(json => {
         if(json) {
-            var week = Math.ceil((Date.now() - new Date(json.result.kssj)) / 1000 / 60 / 60 / 24 / 7)
+            var start = new Date(json.result.kssj)
+            var day = start.getDay()
+            day = (day == 0 ? 7 : day)
+            var nextMonday = new Date(start.setDate(start.getDate() + 7 - day + 1))
+            var week = Math.ceil((Date.now() - nextMonday) / 1000 / 60 / 60 / 24 / 7)
             var weekDiv = document.createElement('div')
             weekDiv.innerHTML = `第<span>${week}</span>周：`
             weekDiv.classList.add('week-count')
@@ -460,13 +468,18 @@ function addWeekCount(container) {
     })
 }
 
-function customize() {
+function initCsrf() {
     for(var imgNode of document.querySelectorAll('img')) {
         csrf = new URL(imgNode.src).searchParams.get('_csrf')
+        console.log(imgNode.src, csrf)
         if(csrf) { break }
     }
+}
 
-    document.querySelectorAll('span.stud').forEach(function (e) {
+function customize() {
+    initCsrf()
+
+    document.querySelectorAll('span.stud').forEach(e => {
         if (parseInt(e.innerText) > 0) {
             e.classList.add('number')
             e.parentElement.classList.add('number')
@@ -490,6 +503,76 @@ function customize() {
         container.appendChild(calendarButton)
 
         addWeekCount(container)
+    }
+
+    var navigationals = []
+    var currentNav = -1
+    document.querySelectorAll('#suoxuecourse>dd.clearfix.stu').forEach(e => {
+        var title = e.querySelector('a.title')
+        title.setAttribute('tabindex', '0')
+        navigationals.push({ current: 0, elements: [ title ] })
+        var elements = []
+        e.querySelectorAll('ul>li.clearfix').forEach(e => {
+            e.setAttribute('tabindex', '-1')
+            elements.push(e)
+        })
+        navigationals.push({ current: 0, elements: elements })
+        elements = []
+        e.querySelectorAll('.operations>button.operation').forEach(e => {
+            e.setAttribute('tabindex', '0')
+            elements.push(e)
+        })
+        navigationals.push({ current: 0, elements: elements })
+    })
+    document.onkeydown = event => {
+        var processed = false
+        if(currentNav === -1) {
+            currentNav = 0
+            processed = true
+        } else {
+            switch(event.key) {
+                case 'Enter':
+                    if(document.activeElement.hasAttribute('tabindex')) {
+                        processed = true
+                        var focus = navigationals[currentNav].elements[navigationals[currentNav].current]
+                        focus.querySelector('a').click()
+                    }
+                    break
+                case "Left":
+                case "ArrowLeft":
+                case 'h':
+                    processed = true
+                    navigationals[currentNav].current--
+                    break
+                case "Dow ":
+                case "ArrowDown":
+                case 'j':
+                    processed = true
+                    currentNav++
+                    break
+                case "Up":
+                case "ArrowUp":
+                case 'k':
+                    processed = true
+                    currentNav--
+                    break
+                case "Right":
+                case "ArrowRight":
+                case 'l':
+                    processed = true
+                    navigationals[currentNav].current++
+                    break
+            }
+        }
+        if(processed) {
+            currentNav = (currentNav + navigationals.length) % navigationals.length
+            var nav = navigationals[currentNav]
+            nav.current = (nav.current + nav.elements.length) % nav.elements.length
+            nav.elements[nav.current].focus()
+            return false
+        } else {
+            return true
+        }
     }
 }
 
@@ -543,39 +626,4 @@ if (logo) {
     iconMap.appendChild(iconMapArea2)
     logo.parentElement.appendChild(iconMap)
     logo.setAttribute('usemap', '#iconmap')
-}
-
-const fileListPath = '/f/wlxt/kj/wlkc_kjxxb/student/beforePageList'
-if(window.location.pathname === fileListPath) {
-    var fileList = document.querySelector('.playli')
-    if(fileList) {
-        var fileListObserver = new MutationObserver(function (records) {
-            for(var record of records) {
-                for(let node of record.addedNodes) {
-                    console.log(node.nodeName)
-                    if(node.nodeName === 'UL') {
-                        let wjid = node.querySelector('li').getAttribute('wjid')
-                        if(!node.querySelector('.new')) {
-                            fetchResponse(`https://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/downloadFile?sfgk=0&wjid=${wjid}`, 'HEAD').then(response => {
-                                var cdHeader = response.headers.get('Content-Disposition')
-                                if(cdHeader.startsWith('attachment; filename="') && cdHeader.endsWith('"')) {
-                                    var attachmentName = decodeURIComponent(escape(JSON.parse(cdHeader.substring('attachment; filename='.length))))
-                                    var fileListItem = node.querySelector('a')
-                                    var fileNameSpan = document.createElement('span')
-                                    fileNameSpan.classList.add('filename')
-                                    fileNameSpan.innerText = attachmentName
-                                    fileListItem.appendChild(fileNameSpan)
-                                }
-                            })
-                        }
-                    }
-                }
-            }
-        })
-        fileListObserver.observe(fileList, {
-            attributes: false,
-            childList: true,
-            subtree: false
-        })
-    }
 }
