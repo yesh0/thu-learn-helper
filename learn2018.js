@@ -2,7 +2,7 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂1202助手
 // @namespace    exhen32@live.com
-// @version      2022年3月6日00版
+// @version      2022年9月12日00版
 // @license      AGPL-3.0-or-later
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
@@ -363,9 +363,9 @@ function displayOperations(e, wlkcid) {
 
 function fetchEvents(year, month, events) {
     var thisMonth = new Date()
-    thisMonth.setFullYear(year, month, 1)
+    thisMonth.setFullYear(year, month, 15)
     var nextMonth = new Date()
-    nextMonth.setFullYear(year, month + 1, 1)
+    nextMonth.setFullYear(year, month + 1, 15)
     return new Promise((resolve, reject) => {
         GM.xmlHttpRequest({
             method: "GET",
