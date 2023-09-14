@@ -1,9 +1,10 @@
 # learn2018helper
+
 网络学堂2018助手
 
 可以在 [网络学堂1202助手 - Greasy Fork](https://greasyfork.org/en/scripts/422447-%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%821202%E5%8A%A9%E6%89%8B) 这里配合 TamperMonkey 等脚本管理器使用。
 
-项目地址：[https://git.tsinghua.edu.cn/yesh19/learn2018helper](https://git.tsinghua.edu.cn/yesh19/learn2018helper) （清华 GitLab 似乎访客看不见。）
+项目地址：[https://github.com/yesh0/thu-learn-helper](https://github.com/yesh0/thu-learn-helper)
 
 原项目 [https://github.com/Exhen/learn2018helper](https://github.com/Exhen/learn2018helper)。
 
@@ -16,6 +17,8 @@
 ![左上角图标链接改为指向“我的课程”](./screenshots/v2.1.png)
 
 ## 更新日志
+
+2023.09.14. 哇网络学堂好像好看点了耶，重新适配新界面；删去了无用的、我已理解不了的一些功能；适配研究生日程下载
 
 2022.09.12. 修复导出所有课程日历功能。
 

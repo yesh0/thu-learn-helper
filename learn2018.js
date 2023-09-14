@@ -21,29 +21,17 @@ document.head.appendChild(document.createElement('style'))
 const sheet = document.styleSheets[document.styleSheets.length - 1];
 
 [
+// 左上角图标
 `
-html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote,
-pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small,
-strike, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend,
-table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption,
-footer, header, menu, nav, output, ruby, section, summary, time, mark, audio, video, input {
-    cursor: unset;
-}
-`,`
-a span:hover {
-    text-decoration: underline;
-}
-`,`
-#banner .left a img {
+#banner .left a img[src="/res/app/wlxt/img/netcourse_logo.svg"] {
     cursor: pointer;
-    margin-top: 6px;
-    margin-bottom: 6px;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    margin-top: 13px;
+    padding-top: 0px;
     background: linear-gradient(90deg, rgb(67, 159, 226) 0%, rgb(75, 168, 234) 55.29%, rgb(0, 114, 198) 55.29%);
     border-radius: 10px;
 }
-`,`
+`, // 周数显示部分样式
+`
 .nav #myTabs {
     margin-bottom: 0;
 }
@@ -51,28 +39,18 @@ a span:hover {
 .nav #myTabContent .boxdetail {
     margin-top: 0.3em;
 }
-`,`.unsee {
-    display: none;
-}`,`
+`, // 鼠标加载动画
+`
 body.loading * {
     cursor: progress !important;
 }
-`,`
-.boxdetail .state li.clearfix span.stud.number {
-    display: block;
-    font-size: 3em;
-    padding-left: 0;
-    text-align: center;
-}
-`,`
-.boxdetail .state li.clearfix a.number+p {
-    display: none;
-}
-`,`
+`, // 不显示课程的第一个框里显示的默认图片，我们把它替换为 DDL 提醒
+`
 .p_img {
     display: none;
 }
-`,`
+`, // 下面是 DDL 提醒的样式
+`
 ul.stu.clearfix li.clearfix:first-child {
     text-align: center;
     display: flex;
@@ -122,7 +100,8 @@ ul.stu.clearfix.hw-overdue li.clearfix:first-child {
 ul.stu.clearfix.clean li.clearfix:first-child::after {
     content: "✓";
 }
-`,`
+`, // 周数显示
+`
 .week-count {
     display: inline-block;
     font-size: 1em;
@@ -134,7 +113,7 @@ ul.stu.clearfix.clean li.clearfix:first-child::after {
     margin: 0 0.2em 0 0.2em;
 }
 `,`
-.state.stu.clearfix .operations {
+.state.stu.clearfix + .operations {
     margin-top: 0.5em;
 }
 `,`
@@ -155,44 +134,24 @@ button.operation:hover, button.operation:active {
     background-color: lightgrey;
 }
 `,`
-.boxdetail .state .num {
-    margin-right: 1em;
+.boxdetail dd.clearfix.stu {
+    padding-bottom: 0;
 }
 `,`
-.header#banner .w, body .content, .footer#banner_footer .w {
-    width: unset;
-}
-`,`
-.playli ul li a span+span.filename {
-    position: absolute;
-    display: none;
-    background-color: white;
-    border: 1px solid blue;
-    border-radius: 3px;
-    z-index: 10;
-    margin-right: 3em;
-    line-height: 1.2em;
-    padding: 0.2em;
-    line-break: anywhere;
-}
-`,`
-.playli ul li a:hover span+span.filename {
-    display: inline-block;
-}
-`,`
-*:focus {
-    box-shadow: 0px 0px 10px cyan;
+.boxdetail dd.clearfix.stu:last-child {
+    padding-bottom: 16px;
 }
 `].forEach((rule) => sheet.insertRule(rule, 0))
 
+// 鼠标加载动画开启关闭
 function setLoading() {
     document.body.classList.add('loading')
 }
-
 function unsetLoading() {
     document.body.classList.remove('loading')
 }
 
+// 仿造请求
 var csrf = ''
 const dummy = {
     'sEcho': 1,
@@ -261,10 +220,11 @@ function getJSON(url) {
     return fetchJSON(url, 'GET')
 }
 
+// 抓取作业剩余时间信息并显示
 function displayDDL(e, wlkcid) {
-    var parent = e.parentElement.parentElement.parentElement
+    var parent = e
     if (parseInt(e.innerText) > 0) {
-        fetchJSON('http://learn.tsinghua.edu.cn/b/wlxt/kczy/zy/student/zyListWj', 'POST', { 'wlkcid': wlkcid }).then(
+        fetchJSON('https://learn.tsinghua.edu.cn/b/wlxt/kczy/zy/student/zyListWj', 'POST', { 'wlkcid': wlkcid }).then(
             function (json) {
                 if(json) {
                     var now = Date.now()
@@ -291,6 +251,7 @@ function displayDDL(e, wlkcid) {
     }
 }
 
+// 保存新课件
 function saveNewFiles(e, wlkcid) {
     getJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kj/wlkc_kjxxb/student/kjxxbByWlkcidAndSizeForStudent?size=999&wlkcid=${wlkcid}`).then((json) => {
         if(json) {
@@ -315,6 +276,7 @@ function saveNewFiles(e, wlkcid) {
     })
 }
 
+// 公告已读
 function markRead(e, wlkcid) {
     setLoading()
     getJSON(`http://learn.tsinghua.edu.cn/b/wlxt/kcgg/wlkc_ggb/student/kcggListXs?size=999&wlkcid=${wlkcid}`).then(json => {
@@ -322,6 +284,7 @@ function markRead(e, wlkcid) {
             var unreadItems = json.object.aaData.filter(e => e.sfyd === '否')
             if (unreadItems.length === 0) {
                 alert('无公告')
+                unsetLoading()
             } else if (confirm(`按确认键将以下公告设为已读：\n${unreadItems.map(function(e) { return '→ ' + e.bt + (e.fjmc ? `（有附件 ${e.fjmc}）` : '') }).join('\n')}`)) {
                 let total = unreadItems.length
                 let count = 0
@@ -344,6 +307,7 @@ function markRead(e, wlkcid) {
     })
 }
 
+// 把按钮加到界面
 function displayOperations(e, wlkcid) {
     const operations = {
         '所有公告标为已读': markRead,
@@ -358,18 +322,20 @@ function displayOperations(e, wlkcid) {
         button.onclick = (operation => (() => operation(e, wlkcid)))(operations[i])
         buttonContainer.appendChild(button)
     }
-    e.parentElement.parentElement.parentElement.parentElement.appendChild(buttonContainer)
+    e.parentElement.parentElement.appendChild(buttonContainer)
 }
 
+// 抓取课程日历信息
 function fetchEvents(year, month, events) {
     var thisMonth = new Date()
     thisMonth.setFullYear(year, month, 15)
     var nextMonth = new Date()
     nextMonth.setFullYear(year, month + 1, 15)
     return new Promise((resolve, reject) => {
+        const graduate = unsafeWindow.role === 'yjs'
         GM.xmlHttpRequest({
             method: "GET",
-            url: `https://zhjw.cic.tsinghua.edu.cn/jxmh_out.do?m=bks_jxrl_all&p_start_date=${thisMonth.toISOString().slice(0, 7).replaceAll('-', '')}01`
+            url: `https://zhjw.cic.tsinghua.edu.cn/jxmh_out.do?m=${graduate ? 'yjs' : 'bks'}_jxrl_all&p_start_date=${thisMonth.toISOString().slice(0, 7).replaceAll('-', '')}01`
                     + `&p_end_date=${nextMonth.toISOString().slice(0, 7).replaceAll('-', '')}01&jsoncallback=no_such_method`,
             onload: response => {
                 if(response.status < 400) {
@@ -382,6 +348,8 @@ function fetchEvents(year, month, events) {
                             monthCalendar.filter(event => (new Date(event.nq)).getMonth() === thisMonth.getMonth())
                         )))
                     }
+                } else {
+                    resolve(events)
                 }
             },
             onerror: reject,
@@ -393,6 +361,7 @@ function getTZ(date, time) {
     return `${date.replaceAll('-', '')}T${time.replaceAll(':', '')}00`
 }
 
+// 生成 ics 文件
 function makeIEvent(event, prior) {
     return `BEGIN:VEVENT\r
 UID:${getTZ(event.nq, event.kssj)}-${Math.floor(Math.random() * 10000)}@tsinghua.edu.cn\r
@@ -408,7 +377,6 @@ DESCRIPTION:${event.nr}前 ${prior} 分钟提醒\r
 END:VALARM\r
 END:VEVENT`
 }
-
 function makeICalendar(events, prior) {
     return `BEGIN:VCALENDAR\r
 VERSION:2.0\r
@@ -427,12 +395,21 @@ END:VCALENDAR\r
 `
 }
 
+// 两个学期临界的一周的时候，result 是上一学期，而 resultList[0] 是下一学期
+function getLatestResult(json) {
+    if (json.resultList && json.resultList[0]) {
+        return json.resultList[0];
+    }
+    return json.result;
+}
+
+// 下载日程为日历
 const semesterUrl = 'https://learn.tsinghua.edu.cn/b/kc/zhjw_v_code_xnxq/getCurrentAndNextSemester'
 function calendarizeAll() {
     setLoading()
     getJSON(semesterUrl).then(json => {
         if(json) {
-            var now = new Date(json.result.kssj)
+            var now = new Date(getLatestResult(json).kssj)
             var month = now.getMonth()
             var year = now.getFullYear()
             var alarmPrior = parseInt(prompt('日历文件可设置日程提醒，每节课提前多少分钟提醒？', 30))
@@ -441,7 +418,7 @@ function calendarizeAll() {
                     unsetLoading()
                     var blob = new Blob([makeICalendar(events, alarmPrior)], {type: "text/plain"})
                     // eslint-disable-next-line no-undef
-                    saveAs(blob, `${json.result.xnxqmc}.ics`)
+                    saveAs(blob, `${getLatestResult(json).xnxqmc}.ics`)
                 })
             } else {
                 unsetLoading()
@@ -452,10 +429,11 @@ function calendarizeAll() {
     })
 }
 
+// 在界面里加入周数
 function addWeekCount(container) {
     getJSON(semesterUrl).then(json => {
         if(json) {
-            var start = new Date(json.result.kssj)
+            var start = new Date(getLatestResult(json).kssj)
             var day = start.getDay()
             day = (day == 0 ? 7 : day)
             var nextMonday = new Date(start.setDate(start.getDate() + 7 - day + 1))
@@ -468,32 +446,34 @@ function addWeekCount(container) {
     })
 }
 
+// 从图片上获取 csrf token
 function initCsrf() {
     for(var imgNode of document.querySelectorAll('img')) {
         csrf = new URL(imgNode.src).searchParams.get('_csrf')
-        console.log(imgNode.src, csrf)
         if(csrf) { break }
     }
 }
 
+// 两学期交界处的特殊处理
+function getCourseContainer() {
+  return document.getElementById('nextsuojiaocourse') || document.getElementById('suoxuecourse');
+}
+
+// 初始化
 function customize() {
     initCsrf()
 
-    document.querySelectorAll('span.stud').forEach(e => {
-        if (parseInt(e.innerText) > 0) {
-            e.classList.add('number')
-            e.parentElement.classList.add('number')
-        }
-
-        if (e.classList.contains('green')) {
-            var wlkcid = new URL(e.parentElement.href).searchParams.get('wlkcid')
-            displayDDL(e, wlkcid)
-            displayOperations(e, wlkcid)
-        }
+    // 课程 DDL 显示、课件下载按钮
+    document.querySelectorAll('.state.stu .name a[href^="/f/wlxt/kczy/zy/"]').forEach(e => {
+        var wlkcid = new URL(e.href).searchParams.get('wlkcid')
+        const parent = e.closest('ul')
+        displayDDL(parent, wlkcid)
+        displayOperations(parent, wlkcid)
     })
 
+    // 周数显示、导出日历按钮
     if(!document.getElementById('calendarizer')) {
-        var container = document.getElementById('suoxuecourse').parentElement.querySelector('dt.title')
+        var container = getCourseContainer().parentElement.querySelector('dt.title')
         var calendarButton = document.createElement('button')
         calendarButton.classList.add('operation')
         calendarButton.id = 'calendarizer'
@@ -504,76 +484,6 @@ function customize() {
 
         addWeekCount(container)
     }
-
-    var navigationals = []
-    var currentNav = -1
-    document.querySelectorAll('#suoxuecourse>dd.clearfix.stu').forEach(e => {
-        var title = e.querySelector('a.title')
-        title.setAttribute('tabindex', '0')
-        navigationals.push({ current: 0, elements: [ title ] })
-        var elements = []
-        e.querySelectorAll('ul>li.clearfix').forEach(e => {
-            e.setAttribute('tabindex', '-1')
-            elements.push(e)
-        })
-        navigationals.push({ current: 0, elements: elements })
-        elements = []
-        e.querySelectorAll('.operations>button.operation').forEach(e => {
-            e.setAttribute('tabindex', '0')
-            elements.push(e)
-        })
-        navigationals.push({ current: 0, elements: elements })
-    })
-    document.onkeydown = event => {
-        var processed = false
-        if(currentNav === -1) {
-            currentNav = 0
-            processed = true
-        } else {
-            switch(event.key) {
-                case 'Enter':
-                    if(document.activeElement.hasAttribute('tabindex')) {
-                        processed = true
-                        var focus = navigationals[currentNav].elements[navigationals[currentNav].current]
-                        focus.querySelector('a').click()
-                    }
-                    break
-                case "Left":
-                case "ArrowLeft":
-                case 'h':
-                    processed = true
-                    navigationals[currentNav].current--
-                    break
-                case "Dow ":
-                case "ArrowDown":
-                case 'j':
-                    processed = true
-                    currentNav++
-                    break
-                case "Up":
-                case "ArrowUp":
-                case 'k':
-                    processed = true
-                    currentNav--
-                    break
-                case "Right":
-                case "ArrowRight":
-                case 'l':
-                    processed = true
-                    navigationals[currentNav].current++
-                    break
-            }
-        }
-        if(processed) {
-            currentNav = (currentNav + navigationals.length) % navigationals.length
-            var nav = navigationals[currentNav]
-            nav.current = (nav.current + nav.elements.length) % nav.elements.length
-            nav.elements[nav.current].focus()
-            return false
-        } else {
-            return true
-        }
-    }
 }
 
 function init() {
@@ -582,10 +492,11 @@ function init() {
     }
 }
 
+// 延迟初始化，等到页面加载完、脚本跑完再说
 const homePath = '/f/wlxt/index/course/student/'
 if (window.location.pathname === homePath) {
     if (document.querySelector('dd.stu') === null) {
-        var container = document.getElementById('suoxuecourse')
+        var container = getCourseContainer()
         var observer = new MutationObserver(function () {
             if (document.querySelector('dd.stu') !== null) {
                 setTimeout(function () {
@@ -603,6 +514,7 @@ if (window.location.pathname === homePath) {
     }
 }
 
+// 左上角的图标分割
 var logo = document.querySelector('#banner .left a>img')
 if (logo) {
     logo.parentElement.href = '#'
