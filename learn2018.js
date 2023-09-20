@@ -2,7 +2,7 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂3202助手
 // @namespace    exhen32@live.com
-// @version      2023年9月17日00版
+// @version      2023年9月20日00版
 // @license      AGPL-3.0-or-later
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
@@ -223,7 +223,7 @@ function getJSON(url) {
 // 抓取作业剩余时间信息并显示
 function displayDDL(e, wlkcid) {
     var parent = e
-    if (parseInt(e.innerText) > 0) {
+    if (parseInt(e.querySelector('li.clearfix:nth-child(4) .rt').innerText) > 0) {
         fetchJSON('https://learn.tsinghua.edu.cn/b/wlxt/kczy/zy/student/zyListWj', 'POST', { 'wlkcid': wlkcid }).then(
             function (json) {
                 if(json) {
