@@ -1,6 +1,6 @@
-# learn2018helper
+# learn1202helper
 
-网络学堂2018助手
+网络学堂1202助手
 
 可以在 [网络学堂1202助手 - Greasy Fork](https://greasyfork.org/en/scripts/422447-%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%821202%E5%8A%A9%E6%89%8B) 这里配合 TamperMonkey 等脚本管理器使用。
 
@@ -17,6 +17,8 @@
 ![左上角图标链接改为指向“我的课程”](./screenshots/v2.1.png)
 
 ## 更新日志
+
+2023.12.25. 修复两学期交界时段的判断 bug
 
 2023.09.20. 修复 DDL 显示
 

@@ -2,7 +2,7 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂3202助手
 // @namespace    exhen32@live.com
-// @version      2023年9月20日00版
+// @version      2023年12月25日圣诞节修bug版
 // @license      AGPL-3.0-or-later
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
@@ -457,7 +457,10 @@ function initCsrf() {
 // 两学期交界处的特殊处理
 function getCourseContainer() {
     if (document.getElementById('nextSemester').value !== '') {
-        return document.getElementById('nextsuojiaocourse');
+        let container = document.getElementById('nextsuojiaocourse');
+        if (container && container.innerText.trim() !== '') {
+            return container;
+        }
     }
     return document.getElementById('suoxuecourse');
 }
