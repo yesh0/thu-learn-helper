@@ -2,7 +2,7 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂3202助手
 // @namespace    exhen32@live.com
-// @version      2023年12月25日圣诞节修bug版
+// @version      2023年12月25日圣诞节修不好bug版
 // @license      AGPL-3.0-or-later
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
@@ -395,12 +395,16 @@ END:VCALENDAR\r
 `
 }
 
-// 两个学期临界的一周的时候，result 是上一学期，而 resultList[0] 是下一学期
+// 两个学期临界的几周的时候，result 是上一学期，而 resultList[0] 是下一学期
 function getLatestResult(json) {
     if (json.resultList && json.resultList[0]) {
-        return json.resultList[0];
+        var nextStart = new Date(json.resultList[0].kssj)
+        nextStart.setDate(nextStart.getDate() - 7 * 4)
+        if (nextStart < Date.now()) {
+            return json.resultList[0]
+        }
     }
-    return json.result;
+    return json.result
 }
 
 // 下载日程为日历
