@@ -327,6 +327,8 @@ function displayOperations(e, wlkcid) {
 
 // 抓取课程日历信息
 function fetchEvents(year, month, events) {
+    var prevMonth = new Date()
+    prevMonth.setFullYear(year, month - 1, 15)
     var thisMonth = new Date()
     thisMonth.setFullYear(year, month, 15)
     var nextMonth = new Date()
@@ -335,8 +337,9 @@ function fetchEvents(year, month, events) {
         const graduate = unsafeWindow.role === 'yjs'
         GM.xmlHttpRequest({
             method: "GET",
-            url: `https://zhjw.cic.tsinghua.edu.cn/jxmh_out.do?m=${graduate ? 'yjs' : 'bks'}_jxrl_all&p_start_date=${thisMonth.toISOString().slice(0, 7).replaceAll('-', '')}01`
-                    + `&p_end_date=${nextMonth.toISOString().slice(0, 7).replaceAll('-', '')}01&jsoncallback=no_such_method`,
+            url: `https://zhjw.cic.tsinghua.edu.cn/jxmh_out.do?m=${graduate ? 'yjs' : 'bks'}_jxrl_all&p_start_date=${prevMonth.toISOString().slice(0, 7).replaceAll('-', '')}01`
+                    + `&p_end_date=${nextMonth.toISOString().slice(0, 7).replaceAll('-', '')}01&jsoncallback=no_such_method`
+                    + `&_csrf=${csrf}`,
             onload: response => {
                 if(response.status < 400) {
                     var text = response.responseText
