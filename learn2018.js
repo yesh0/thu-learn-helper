@@ -2,7 +2,7 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂4202助手
 // @namespace    exhen32@live.com
-// @version      2024年02月23日开学快乐版
+// @version      2024年02月23日开学快乐版+1
 // @license      AGPL-3.0-or-later
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
@@ -29,6 +29,11 @@ const sheet = document.styleSheets[document.styleSheets.length - 1];
     padding-top: 0px;
     background: linear-gradient(90deg, rgb(67, 159, 226) 0%, rgb(75, 168, 234) 55.29%, rgb(0, 114, 198) 55.29%);
     border-radius: 10px;
+}
+`, // 右上角课程日历显示修复
+    `
+.qtip {
+    width: max-content;
 }
 `, // 周数显示部分样式
     `
