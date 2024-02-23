@@ -1,8 +1,8 @@
 // ==UserScript==
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
-// @name         网络学堂3202助手
+// @name         网络学堂4202助手
 // @namespace    exhen32@live.com
-// @version      2023年12月25日圣诞节修不好bug版
+// @version      2024年02月23日开学快乐版
 // @license      AGPL-3.0-or-later
 // @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js

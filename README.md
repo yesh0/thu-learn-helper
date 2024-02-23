@@ -1,8 +1,12 @@
-# learn1202helper
+# learn4202helper
 
-网络学堂1202助手
+网络学堂4202助手
 
-可以在 [网络学堂1202助手 - Greasy Fork](https://greasyfork.org/en/scripts/422447-%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%821202%E5%8A%A9%E6%89%8B) 这里配合 TamperMonkey 等脚本管理器使用。
+> [!IMPORTANT]
+> 本科生和研究生的 API 有一点点不同，我现在只能测试研究生的 API 了，所以如果本科生课程有问题的话还请多多提 issue！
+> （当然如果有人能在我<del>延毕</del>毕业之前慢慢接手脚本维护就更好了。）
+
+可以在 [网络学堂4202助手 - Greasy Fork](https://greasyfork.org/en/scripts/422447-%E7%BD%91%E7%BB%9C%E5%AD%A6%E5%A0%821202%E5%8A%A9%E6%89%8B) 这里配合 TamperMonkey 等脚本管理器使用。
 
 项目地址：[https://github.com/yesh0/thu-learn-helper](https://github.com/yesh0/thu-learn-helper)
 
@@ -17,6 +21,8 @@
 ![左上角图标链接改为指向“我的课程”](./screenshots/v2.1.png)
 
 ## 更新日志
+
+2024.02.23. 应对课程日历 API 疑似新加的抓取参数限制。
 
 2023.12.25. 修复两学期交界时段的判断 bug
 
