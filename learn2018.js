@@ -2,9 +2,9 @@
 // @icon         http://tns.thss.tsinghua.edu.cn/~yangzheng/images/Tsinghua_University_Logo_Big.png
 // @name         网络学堂4202助手
 // @namespace    exhen32@live.com
-// @version      2024年02月23日开学快乐版+1
+// @version      2024年02月25日开学快乐版
 // @license      AGPL-3.0-or-later
-// @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读。
+// @description  直观展现死线情况，点击即可跳转；导出所有课程至日历；一键标记公告已读；保持登录状态
 // @require      https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
 // @grant        GM.xmlHttpRequest
 // @connect      zhjw.cic.tsinghua.edu.cn
@@ -162,6 +162,17 @@ button.operation:hover, button.operation:active {
     `
 .boxdetail dd.clearfix.stu:last-child {
     padding-bottom: 16px;
+}
+`, // 用于自动刷新的 iframe
+    `
+iframe#refresher {
+    position: absolute;
+    left: -10em;
+    top: -10em;
+    width: 10em;
+    height: 10em;
+    border: 1px solid magenta;
+    opacity: 0.5;
 }
 `,
 ].forEach((rule) => sheet.insertRule(rule, 0));
@@ -626,9 +637,34 @@ function customize() {
     }
 }
 
+const insideIframe = window.location.hash === '#refresher';
+function autoRefresh() {
+    if (insideIframe) {
+        return;
+    }
+    const iframe = document.createElement('iframe');
+    const page = '/f/wlxt/index/course/student/#refresher';
+    iframe.id = 'refresher';
+    iframe.style.visibility = 'hidden';
+    iframe.onload = () => {
+        setTimeout(() => {
+            iframe.src = '';
+        }, 5000);
+        setTimeout(() => {
+            iframe.src = page;
+        }, 10 * 60 * 1000);
+    };
+    iframe.onerror = iframe.onload;
+    document.body.append(iframe);
+    iframe.src = page;
+}
+
 function init() {
     if (!document.querySelector('.state.stu.clearfix .operations')) {
         customize();
+    }
+    if (!document.querySelector('iframe#refresher')) {
+        autoRefresh();
     }
 }
 
